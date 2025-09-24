@@ -375,8 +375,6 @@ export class Topic extends BaseEntity implements IVersionable, IHierarchical {
       updateContent: this.updateContent.bind(this),
       updateParent: this.updateParent.bind(this),
       toSafeObject: this.toSafeObject.bind(this),
-      getAge: this.getAge.bind(this),
-      isRecentlyCreated: this.isRecentlyCreated.bind(this),
       parentId: this.parentId,
     };
   }

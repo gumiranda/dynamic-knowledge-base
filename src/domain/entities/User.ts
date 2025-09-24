@@ -214,8 +214,6 @@ export class User extends BaseEntity {
       getDisplayName: this.getDisplayName.bind(this),
       getRoleHierarchy: this.getRoleHierarchy.bind(this),
       toSafeObject: this.toSafeObject.bind(this),
-      getAge: this.getAge.bind(this),
-      isRecentlyCreated: this.isRecentlyCreated.bind(this),
     };
   }
 }

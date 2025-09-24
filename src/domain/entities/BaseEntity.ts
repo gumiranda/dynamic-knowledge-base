@@ -33,20 +33,4 @@ export abstract class BaseEntity {
     this.updatedAt = EntityUtils.createTimestamp();
   }
 
-  /**
-   * Gets the entity's age in milliseconds
-   * @returns Age of entity since creation
-   */
-  getAge(): number {
-    return Date.now() - this.createdAt.getTime();
-  }
-
-  /**
-   * Checks if the entity was recently created (within last hour)
-   * @returns True if created within the last hour
-   */
-  isRecentlyCreated(): boolean {
-    const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
-    return this.getAge() < oneHour;
-  }
 }

@@ -81,68 +81,7 @@ export class DatabaseTestUtils {
     return { database, cleanup };
   }
 
-  /**
-   * Seeds a database with test data
-   */
-  static async seedDatabase(
-    database: FileDatabase,
-    seedData: {
-      users?: any[];
-      topics?: any[];
-      resources?: any[];
-    }
-  ): Promise<void> {
-    const data = await database.getData();
 
-    if (seedData.users) {
-      seedData.users.forEach((user) => {
-        data.users[user.id] = user;
-      });
-    }
-
-    if (seedData.topics) {
-      seedData.topics.forEach((topic) => {
-        if (!data.topics[topic.id]) {
-          data.topics[topic.id] = {
-            versions: [],
-            currentVersion: 0,
-            isDeleted: false,
-          };
-        }
-        data.topics[topic.id].versions.push(topic);
-        data.topics[topic.id].currentVersion = topic.version;
-      });
-    }
-
-    if (seedData.resources) {
-      seedData.resources.forEach((resource) => {
-        data.resources[resource.id] = resource;
-      });
-    }
-
-    // Note: FileDatabase doesn't expose write method directly
-    throw new Error('Direct write operations not supported on FileDatabase');
-  }
-
-  /**
-   * Clears all data from a database
-   */
-  static async clearDatabase(_database: FileDatabase): Promise<void> {
-    // Note: This method would clear the database if it had write access
-    // const _emptyData = {
-    //   users: {},
-    //   topics: {},
-    //   resources: {},
-    //   metadata: {
-    //     lastTopicId: 0,
-    //     lastResourceId: 0,
-    //     lastUserId: 0,
-    //   },
-    // };
-
-    // Note: FileDatabase doesn't expose write method directly
-    throw new Error('Direct write operations not supported on FileDatabase');
-  }
 
   /**
    * Creates a database snapshot for rollback testing
@@ -151,16 +90,6 @@ export class DatabaseTestUtils {
     return await database.getData();
   }
 
-  /**
-   * Restores a database from a snapshot
-   */
-  static async restoreSnapshot(
-    _database: FileDatabase,
-    _snapshot: any
-  ): Promise<void> {
-    // Note: FileDatabase doesn't expose write method directly
-    throw new Error('Direct write operations not supported on FileDatabase');
-  }
 
   /**
    * Cleans up all test databases (call in global teardown)

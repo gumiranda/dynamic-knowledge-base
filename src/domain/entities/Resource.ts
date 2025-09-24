@@ -333,8 +333,6 @@ export class Resource extends BaseEntity {
       hasAppropriateType: this.hasAppropriateType.bind(this),
       getShortUrl: this.getShortUrl.bind(this),
       toSafeObject: this.toSafeObject.bind(this),
-      getAge: this.getAge.bind(this),
-      isRecentlyCreated: this.isRecentlyCreated.bind(this),
     };
   }
 }
