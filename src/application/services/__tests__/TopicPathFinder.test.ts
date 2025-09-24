@@ -88,11 +88,11 @@ class MockTopicRepository implements ITopicRepository {
     return this.delete(id);
   }
 
-  async restore(_id: string): Promise<boolean> {
+  async restore(): Promise<boolean> {
     return true;
   }
 
-  async isDeleted(_id: string): Promise<boolean> {
+  async isDeleted(): Promise<boolean> {
     return false;
   }
 }
