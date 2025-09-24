@@ -6,6 +6,7 @@
 export { TopicService } from './TopicService';
 export { ResourceService } from './ResourceService';
 export { UserService } from './UserService';
+export { TopicPathFinder } from './TopicPathFinder';
 
 // Export DTOs
 export * from '../dtos/TopicDto';

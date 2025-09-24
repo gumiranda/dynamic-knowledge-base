@@ -103,15 +103,15 @@
   - Write unit tests for UserService
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 7. Implement custom shortest path algorithm
-- [ ] 7.1 Create TopicPathFinder service
+- [x] 7. Implement custom shortest path algorithm
+- [x] 7.1 Create TopicPathFinder service
   - Implement custom BFS algorithm for shortest path finding
   - Create topic graph building from hierarchical relationships
   - Add bidirectional graph traversal logic
   - Handle disconnected topics and no-path scenarios
   - _Requirements: 7.1, 7.2, 7.4_
 
-- [ ] 7.2 Optimize path finding algorithm
+- [x] 7.2 Optimize path finding algorithm
   - Implement performance optimizations for large hierarchies
   - Add caching for frequently accessed paths
   - Create path validation and error handling
