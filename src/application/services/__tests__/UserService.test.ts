@@ -48,6 +48,710 @@ describe('UserService', () => {
     // Reset all mocks
     jest.clearAllMocks();
 
+    // Initialize service
+    userService = new UserService(mockUserRepository);
+
+    // Create test users
+    adminUser = new User({
+      name: 'Admin User',
+      email: 'admin@test.com',
+      role: UserRole.ADMIN,
+    });
+
+    editorUser = new User({
+      name: 'Editor User',
+      email: 'editor@test.com',
+      role: UserRole.EDITOR,
+    });
+
+    viewerUser = new User({
+      name: 'Viewer User',
+      email: 'viewer@test.com',
+      role: UserRole.VIEWER,
+    });
+  });
+
+  describe('registerUser', () => {
+    const validRegisterDto: RegisterUserDto = {
+      name: 'New User',
+      email: 'newuser@test.com',
+      role: UserRole.EDITOR,
+    };
+
+    it('should register user successfully with admin registering', async () => {
+      // Arrange
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue(editorUser);
+
+      // Act
+      const result = await userService.registerUser(validRegisterDto, adminUser);
+
+      // Assert
+      expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(
+        validRegisterDto.email.toLowerCase()
+      );
+      expect(mockUserRepository.create).toHaveBeenCalledWith(expect.any(User));
+      expect(result).toEqual(expect.objectContaining({
+        name: editorUser.name,
+        email: editorUser.email,
+        role: editorUser.role,
+      }));
+    });
+
+    it('should register user successfully for self-registration', async () => {
+      // Arrange
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue(editorUser);
+
+      // Act
+      const result = await userService.registerUser(validRegisterDto);
+
+      // Assert
+      expect(mockUserRepository.create).toHaveBeenCalled();
+      expect(result).toBeDefined();
+    });
+
+    it('should throw UnauthorizedError when non-admin tries to register others', async () => {
+      // Act & Assert
+      await expect(
+        userService.registerUser(validRegisterDto, editorUser)
+      ).rejects.toThrow(UnauthorizedError);
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictError when email already exists', async () => {
+      // Arrange
+      mockUserRepository.findByEmail.mockResolvedValue(editorUser);
+
+      // Act & Assert
+      await expect(
+        userService.registerUser(validRegisterDto, adminUser)
+      ).rejects.toThrow(ConflictError);
+    });
+
+    it('should throw ValidationError for invalid name', async () => {
+      // Arrange
+      const invalidDto: RegisterUserDto = {
+        ...validRegisterDto,
+        name: 'A', // Too short
+      };
+
+      // Act & Assert
+      await expect(
+        userService.registerUser(invalidDto, adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for name exceeding 100 characters', async () => {
+      // Arrange
+      const invalidDto: RegisterUserDto = {
+        ...validRegisterDto,
+        name: 'a'.repeat(101),
+      };
+
+      // Act & Assert
+      await expect(
+        userService.registerUser(invalidDto, adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for invalid email format', async () => {
+      // Arrange
+      const invalidDto: RegisterUserDto = {
+        ...validRegisterDto,
+        email: 'invalid-email',
+      };
+
+      // Act & Assert
+      await expect(
+        userService.registerUser(invalidDto, adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for invalid role', async () => {
+      // Arrange
+      const invalidDto: RegisterUserDto = {
+        ...validRegisterDto,
+        role: 'InvalidRole' as UserRole,
+      };
+
+      // Act & Assert
+      await expect(
+        userService.registerUser(invalidDto, adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should normalize email to lowercase', async () => {
+      // Arrange
+      const dtoWithUppercaseEmail: RegisterUserDto = {
+        ...validRegisterDto,
+        email: 'NEWUSER@TEST.COM',
+      };
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue(editorUser);
+
+      // Act
+      await userService.registerUser(dtoWithUppercaseEmail, adminUser);
+
+      // Assert
+      expect(mockUserRepository.findByEmail).toHaveBeenCalledWith('newuser@test.com');
+    });
+  });
+
+  describe('authenticateUser', () => {
+    const validAuthDto: AuthenticateUserDto = {
+      email: 'admin@test.com',
+    };
+
+    it('should authenticate user successfully', async () => {
+      // Arrange
+      mockUserRepository.findByEmail.mockResolvedValue(adminUser);
+
+      // Act
+      const result = await userService.authenticateUser(validAuthDto);
+
+      // Assert
+      expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(
+        validAuthDto.email.toLowerCase()
+      );
+      expect(result).toEqual(expect.objectContaining({
+        id: adminUser.id,
+        email: adminUser.email,
+      }));
+    });
+
+    it('should return null when user not found', async () => {
+      // Arrange
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+
+      // Act
+      const result = await userService.authenticateUser(validAuthDto);
+
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should throw ValidationError for missing email', async () => {
+      // Arrange
+      const invalidDto: AuthenticateUserDto = {
+        email: '',
+      };
+
+      // Act & Assert
+      await expect(
+        userService.authenticateUser(invalidDto)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should normalize email to lowercase', async () => {
+      // Arrange
+      const dtoWithUppercaseEmail: AuthenticateUserDto = {
+        email: 'ADMIN@TEST.COM',
+      };
+      mockUserRepository.findByEmail.mockResolvedValue(adminUser);
+
+      // Act
+      await userService.authenticateUser(dtoWithUppercaseEmail);
+
+      // Assert
+      expect(mockUserRepository.findByEmail).toHaveBeenCalledWith('admin@test.com');
+    });
+  });
+
+  describe('updateUser', () => {
+    const validUpdateDto: UpdateUserDto = {
+      name: 'Updated Name',
+      email: 'updated@test.com',
+    };
+
+    it('should allow user to update themselves', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+      mockUserRepository.update.mockResolvedValue({
+        ...editorUser,
+        ...validUpdateDto,
+      });
+
+      // Act
+      const result = await userService.updateUser(
+        editorUser.id,
+        validUpdateDto,
+        editorUser
+      );
+
+      // Assert
+      expect(mockUserRepository.update).toHaveBeenCalledWith(
+        editorUser.id,
+        expect.any(User)
+      );
+      expect(result.name).toBe(validUpdateDto.name);
+      expect(result.email).toBe(validUpdateDto.email);
+    });
+
+    it('should allow admin to update other users', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+      mockUserRepository.update.mockResolvedValue({
+        ...editorUser,
+        ...validUpdateDto,
+      });
+
+      // Act
+      const result = await userService.updateUser(
+        editorUser.id,
+        validUpdateDto,
+        adminUser
+      );
+
+      // Assert
+      expect(result).toBeDefined();
+    });
+
+    it('should throw UnauthorizedError when non-admin tries to update others', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(adminUser);
+
+      // Act & Assert
+      await expect(
+        userService.updateUser(adminUser.id, validUpdateDto, editorUser)
+      ).rejects.toThrow(UnauthorizedError);
+    });
+
+    it('should throw NotFoundError when user not found', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        userService.updateUser('non-existent-id', validUpdateDto, adminUser)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it('should check email uniqueness when email is updated', async () => {
+      // Arrange
+      const updateWithNewEmail: UpdateUserDto = {
+        email: 'newemail@test.com',
+      };
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+      mockUserRepository.findByEmail.mockResolvedValue(adminUser); // Different user has this email
+
+      // Act & Assert
+      await expect(
+        userService.updateUser(editorUser.id, updateWithNewEmail, editorUser)
+      ).rejects.toThrow(ConflictError);
+    });
+
+    it('should allow role updates by admin only', async () => {
+      // Arrange
+      const updateWithRole: UpdateUserDto = {
+        role: UserRole.ADMIN,
+      };
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+      mockUserRepository.update.mockResolvedValue({
+        ...editorUser,
+        role: UserRole.ADMIN,
+      });
+
+      // Act
+      const result = await userService.updateUser(
+        editorUser.id,
+        updateWithRole,
+        adminUser
+      );
+
+      // Assert
+      expect(result.role).toBe(UserRole.ADMIN);
+    });
+
+    it('should throw UnauthorizedError when non-admin tries to change roles', async () => {
+      // Arrange
+      const updateWithRole: UpdateUserDto = {
+        role: UserRole.ADMIN,
+      };
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+
+      // Act & Assert
+      await expect(
+        userService.updateUser(editorUser.id, updateWithRole, editorUser)
+      ).rejects.toThrow(UnauthorizedError);
+    });
+
+    it('should prevent admin from demoting themselves', async () => {
+      // Arrange
+      const updateWithDemotion: UpdateUserDto = {
+        role: UserRole.EDITOR,
+      };
+      mockUserRepository.findById.mockResolvedValue(adminUser);
+
+      // Act & Assert
+      await expect(
+        userService.updateUser(adminUser.id, updateWithDemotion, adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for invalid email format', async () => {
+      // Arrange
+      const invalidUpdate: UpdateUserDto = {
+        email: 'invalid-email',
+      };
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+
+      // Act & Assert
+      await expect(
+        userService.updateUser(editorUser.id, invalidUpdate, editorUser)
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe('getUser', () => {
+    it('should retrieve user successfully', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+
+      // Act
+      const result = await userService.getUser(editorUser.id, adminUser);
+
+      // Assert
+      expect(result).toEqual(expect.objectContaining({
+        id: editorUser.id,
+        name: editorUser.name,
+      }));
+    });
+
+    it('should return null when user not found', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(null);
+
+      // Act
+      const result = await userService.getUser('non-existent-id', adminUser);
+
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should throw UnauthorizedError for viewer without permissions', async () => {
+      // Act & Assert
+      await expect(
+        userService.getUser(editorUser.id, viewerUser)
+      ).rejects.toThrow(UnauthorizedError);
+    });
+  });
+
+  describe('getAllUsers', () => {
+    it('should return all users for admin', async () => {
+      // Arrange
+      const allUsers = [adminUser, editorUser, viewerUser];
+      mockUserRepository.findAll.mockResolvedValue(allUsers);
+
+      // Act
+      const result = await userService.getAllUsers(adminUser);
+
+      // Assert
+      expect(result).toHaveLength(3);
+    });
+
+    it('should throw UnauthorizedError for non-admin', async () => {
+      // Act & Assert
+      await expect(
+        userService.getAllUsers(editorUser)
+      ).rejects.toThrow(UnauthorizedError);
+    });
+  });
+
+  describe('searchUsers', () => {
+    it('should search users by name and email', async () => {
+      // Arrange
+      const searchTerm = 'test';
+      const nameResults = [editorUser];
+      const emailUser = adminUser;
+
+      mockUserRepository.findByName.mockResolvedValue(nameResults);
+      mockUserRepository.findByEmail.mockResolvedValue(emailUser);
+
+      // Act
+      const result = await userService.searchUsers(searchTerm, adminUser);
+
+      // Assert
+      expect(mockUserRepository.findByName).toHaveBeenCalledWith(searchTerm);
+      expect(result.users).toHaveLength(1);
+      expect(result.searchTerm).toBe(searchTerm);
+    });
+
+    it('should search by email when search term contains @', async () => {
+      // Arrange
+      const emailSearchTerm = 'admin@test.com';
+      mockUserRepository.findByName.mockResolvedValue([]);
+      mockUserRepository.findByEmail.mockResolvedValue(adminUser);
+
+      // Act
+      const result = await userService.searchUsers(emailSearchTerm, adminUser);
+
+      // Assert
+      expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(emailSearchTerm);
+      expect(result.users).toHaveLength(1);
+    });
+
+    it('should filter by role when specified', async () => {
+      // Arrange
+      const searchTerm = 'user';
+      const allResults = [adminUser, editorUser, viewerUser];
+      mockUserRepository.findByName.mockResolvedValue(allResults);
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+
+      // Act
+      const result = await userService.searchUsers(
+        searchTerm,
+        adminUser,
+        UserRole.EDITOR
+      );
+
+      // Assert
+      expect(result.users).toHaveLength(1);
+      expect(result.users[0].role).toBe(UserRole.EDITOR);
+      expect(result.roleFilter).toBe(UserRole.EDITOR);
+    });
+
+    it('should deduplicate search results', async () => {
+      // Arrange
+      const searchTerm = 'admin@test.com';
+      mockUserRepository.findByName.mockResolvedValue([adminUser]);
+      mockUserRepository.findByEmail.mockResolvedValue(adminUser);
+
+      // Act
+      const result = await userService.searchUsers(searchTerm, adminUser);
+
+      // Assert
+      expect(result.users).toHaveLength(1);
+    });
+
+    it('should throw UnauthorizedError for non-admin', async () => {
+      // Act & Assert
+      await expect(
+        userService.searchUsers('test', editorUser)
+      ).rejects.toThrow(UnauthorizedError);
+    });
+
+    it('should throw ValidationError for empty search term', async () => {
+      // Act & Assert
+      await expect(
+        userService.searchUsers('', adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe('assignRole', () => {
+    const validAssignmentDto: AssignRoleDto = {
+      userId: editorUser.id,
+      newRole: UserRole.ADMIN,
+    };
+
+    it('should assign role successfully by admin', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+      mockUserRepository.update.mockResolvedValue({
+        ...editorUser,
+        role: UserRole.ADMIN,
+      });
+
+      // Act
+      const result = await userService.assignRole(validAssignmentDto, adminUser);
+
+      // Assert
+      expect(mockUserRepository.update).toHaveBeenCalledWith(
+        editorUser.id,
+        expect.any(User)
+      );
+      expect(result.role).toBe(UserRole.ADMIN);
+    });
+
+    it('should throw UnauthorizedError for non-admin', async () => {
+      // Act & Assert
+      await expect(
+        userService.assignRole(validAssignmentDto, editorUser)
+      ).rejects.toThrow(UnauthorizedError);
+    });
+
+    it('should throw NotFoundError when target user not found', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        userService.assignRole(validAssignmentDto, adminUser)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it('should prevent admin from demoting themselves', async () => {
+      // Arrange
+      const selfDemotionDto: AssignRoleDto = {
+        userId: adminUser.id,
+        newRole: UserRole.EDITOR,
+      };
+      mockUserRepository.findById.mockResolvedValue(adminUser);
+
+      // Act & Assert
+      await expect(
+        userService.assignRole(selfDemotionDto, adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for invalid role', async () => {
+      // Arrange
+      const invalidRoleDto: AssignRoleDto = {
+        userId: editorUser.id,
+        newRole: 'InvalidRole' as UserRole,
+      };
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+
+      // Act & Assert
+      await expect(
+        userService.assignRole(invalidRoleDto, adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should delete user successfully by admin', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(editorUser);
+      mockUserRepository.delete.mockResolvedValue(true);
+
+      // Act
+      const result = await userService.deleteUser(editorUser.id, adminUser);
+
+      // Assert
+      expect(mockUserRepository.delete).toHaveBeenCalledWith(editorUser.id);
+      expect(result).toBe(true);
+    });
+
+    it('should throw UnauthorizedError for non-admin', async () => {
+      // Act & Assert
+      await expect(
+        userService.deleteUser(editorUser.id, editorUser)
+      ).rejects.toThrow(UnauthorizedError);
+    });
+
+    it('should throw NotFoundError when user not found', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        userService.deleteUser('non-existent-id', adminUser)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it('should prevent admin from deleting themselves', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(adminUser);
+
+      // Act & Assert
+      await expect(
+        userService.deleteUser(adminUser.id, adminUser)
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe('getUserStats', () => {
+    it('should return user statistics for admin', async () => {
+      // Arrange
+      const allUsers = [adminUser, editorUser, viewerUser];
+      const recentUsers = [editorUser];
+      
+      mockUserRepository.findAll.mockResolvedValue(allUsers);
+      mockUserRepository.findByDateRange.mockResolvedValue(recentUsers);
+
+      // Act
+      const result = await userService.getUserStats(adminUser);
+
+      // Assert
+      expect(result.totalUsers).toBe(3);
+      expect(result.adminCount).toBe(1);
+      expect(result.editorCount).toBe(1);
+      expect(result.viewerCount).toBe(1);
+      expect(result.recentRegistrations).toBe(1);
+    });
+
+    it('should throw UnauthorizedError for non-admin', async () => {
+      // Act & Assert
+      await expect(
+        userService.getUserStats(editorUser)
+      ).rejects.toThrow(UnauthorizedError);
+    });
+  });
+
+  describe('validateUserPermissions', () => {
+    it('should validate read permissions correctly', async () => {
+      // Act
+      const adminResult = await userService.validateUserPermissions(
+        adminUser,
+        'read'
+      );
+      const viewerResult = await userService.validateUserPermissions(
+        viewerUser,
+        'read'
+      );
+
+      // Assert
+      expect(adminResult.hasPermission).toBe(true);
+      expect(viewerResult.hasPermission).toBe(true);
+    });
+
+    it('should validate write permissions correctly', async () => {
+      // Act
+      const adminResult = await userService.validateUserPermissions(
+        adminUser,
+        'write'
+      );
+      const editorResult = await userService.validateUserPermissions(
+        editorUser,
+        'write'
+      );
+      const viewerResult = await userService.validateUserPermissions(
+        viewerUser,
+        'write'
+      );
+
+      // Assert
+      expect(adminResult.hasPermission).toBe(true);
+      expect(editorResult.hasPermission).toBe(true);
+      expect(viewerResult.hasPermission).toBe(false);
+      expect(viewerResult.reason).toContain('write permissions');
+    });
+
+    it('should validate delete permissions correctly', async () => {
+      // Act
+      const adminResult = await userService.validateUserPermissions(
+        adminUser,
+        'delete'
+      );
+      const editorResult = await userService.validateUserPermissions(
+        editorUser,
+        'delete'
+      );
+
+      // Assert
+      expect(adminResult.hasPermission).toBe(true);
+      expect(editorResult.hasPermission).toBe(false);
+      expect(editorResult.reason).toContain('delete permissions');
+    });
+
+    it('should return error for invalid action', async () => {
+      // Act
+      const result = await userService.validateUserPermissions(
+        adminUser,
+        'invalid' as any
+      );
+
+      // Assert
+      expect(result.hasPermission).toBe(false);
+      expect(result.reason).toContain('Invalid action');
+    });
+  });
+});
+
     // Create service instance
     userService = new UserService(mockUserRepository);
 
