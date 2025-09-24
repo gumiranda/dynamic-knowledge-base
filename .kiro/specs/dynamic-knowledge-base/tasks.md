@@ -7,29 +7,29 @@
   - Create project directory structure following clean architecture
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 2. Implement core domain models and interfaces
-- [ ] 2.1 Create base entity abstractions and interfaces
+- [x] 2. Implement core domain models and interfaces
+- [x] 2.1 Create base entity abstractions and interfaces
   - Write BaseEntity abstract class with common properties
   - Implement IVersionable interface for version control
   - Implement IHierarchical interface for parent-child relationships
   - Create utility functions for ID generation and validation
   - _Requirements: 8.1, 8.5_
 
-- [ ] 2.2 Implement User entity and role system
+- [x] 2.2 Implement User entity and role system
   - Create User class extending BaseEntity
   - Define UserRole enum with Admin, Editor, Viewer roles
   - Implement user validation methods
   - Write unit tests for User entity
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 2.3 Implement Topic entity with Composite pattern
+- [x] 2.3 Implement Topic entity with Composite pattern
   - Create Topic class implementing IVersionable and IHierarchical
   - Implement parent-child relationship methods
   - Add circular reference prevention logic
   - Write comprehensive unit tests for Topic entity
   - _Requirements: 3.1, 4.1, 4.2, 4.3, 8.4_
 
-- [ ] 2.4 Implement Resource entity
+- [x] 2.4 Implement Resource entity
   - Create Resource class extending BaseEntity
   - Define ResourceType enum for different resource types
   - Implement URL validation for resource links
