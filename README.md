@@ -222,6 +222,58 @@ DELETE /api/v1/users/:id
 Authorization: Bearer <admin-jwt-token>
 ```
 
+#### Get Current User
+
+```http
+GET /api/v1/users/me
+Authorization: Bearer <jwt-token>
+```
+
+#### Get User Statistics (Admin only)
+
+```http
+GET /api/v1/users/stats
+Authorization: Bearer <admin-jwt-token>
+```
+
+#### Assign Role to User (Admin only)
+
+```http
+POST /api/v1/users/:id/assign-role
+Authorization: Bearer <admin-jwt-token>
+```
+
+```json
+{
+  "newRole": "Editor"
+}
+```
+
+#### Authenticate User (Legacy)
+
+```http
+POST /api/v1/users/authenticate
+```
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+#### Validate User Permissions
+
+```http
+POST /api/v1/users/validate-permissions
+Authorization: Bearer <jwt-token>
+```
+
+```json
+{
+  "action": "edit_topic"
+}
+```
+
 ### Topic Management
 
 #### Create Topic (Admin/Editor only)
@@ -274,6 +326,34 @@ GET /api/v1/topics/:id/hierarchy?maxDepth=5
 Authorization: Bearer <jwt-token> (optional for read operations)
 ```
 
+#### Get Topic Versions
+
+```http
+GET /api/v1/topics/:id/versions
+Authorization: Bearer <jwt-token> (optional for read operations)
+```
+
+#### Get Topic Resources
+
+```http
+GET /api/v1/topics/:id/resources
+Authorization: Bearer <jwt-token> (optional for read operations)
+```
+
+#### Get Orphaned Topics (Admin only)
+
+```http
+GET /api/v1/topics/orphaned
+Authorization: Bearer <admin-jwt-token>
+```
+
+#### Restore Topic (Admin only)
+
+```http
+POST /api/v1/topics/:id/restore
+Authorization: Bearer <admin-jwt-token>
+```
+
 ### Resource Management
 
 #### Create Resource (Admin/Editor only)
@@ -286,7 +366,6 @@ Authorization: Bearer <jwt-token>
 ```json
 {
   "topicId": "topic_001",
-  "name": "ML Guide",
   "url": "https://example.com/article",
   "description": "Comprehensive guide to machine learning",
   "type": "article"
@@ -319,6 +398,33 @@ Authorization: Bearer <jwt-token>
 ```http
 DELETE /api/v1/resources/:id
 Authorization: Bearer <admin-jwt-token>
+```
+
+#### Validate Resource Association
+
+```http
+POST /api/v1/resources/validate
+Authorization: Bearer <jwt-token>
+```
+
+```json
+{
+  "topicId": "topic_001",
+  "url": "https://example.com/article"
+}
+```
+
+#### Get Bulk Topic Resources
+
+```http
+POST /api/v1/resources/bulk
+Authorization: Bearer <jwt-token>
+```
+
+```json
+{
+  "topicIds": ["topic_001", "topic_002", "topic_003"]
+}
 ```
 
 ### Path Finding
