@@ -7,10 +7,13 @@ import {
   UpdateUserDto,
   UserResponseDto,
   AuthenticateUserDto,
+  LoginUserDto,
+  LoginResponseDto,
   UserSearchDto,
   AssignRoleDto,
   UserStatsDto,
 } from '../dtos/UserDto';
+import { JwtService } from '../../infrastructure/services/JwtService';
 import {
   ValidationError,
   NotFoundError,
@@ -23,7 +26,11 @@ import {
  * Implements user registration, authentication, role management, and validation
  */
 export class UserService {
-  constructor(private readonly userRepository: IUserRepository) {}
+  private readonly jwtService: JwtService;
+
+  constructor(private readonly userRepository: IUserRepository) {
+    this.jwtService = new JwtService();
+  }
 
   /**
    * Registers a new user with validation
@@ -56,11 +63,18 @@ export class UserService {
       throw new ConflictError('A user with this email already exists');
     }
 
+    // Hash password if provided
+    let hashedPassword: string | undefined;
+    if (userData.password) {
+      hashedPassword = await User.hashPassword(userData.password);
+    }
+
     // Create user entity
     const user = new User({
       name: userData.name.trim(),
       email: userData.email.toLowerCase().trim(),
       role: userData.role,
+      password: hashedPassword,
     });
 
     // Validate user entity
@@ -99,6 +113,58 @@ export class UserService {
     }
 
     return this.mapToResponseDto(user);
+  }
+
+  /**
+   * Logs in a user with email and password, returning JWT tokens
+   * @param loginData The login credentials
+   * @returns Promise resolving to login response with JWT tokens
+   */
+  async loginUser(loginData: LoginUserDto): Promise<LoginResponseDto> {
+    // Validate input
+    if (!loginData.email || typeof loginData.email !== 'string') {
+      throw new ValidationError('Email is required for login');
+    }
+
+    if (!loginData.password || typeof loginData.password !== 'string') {
+      throw new ValidationError('Password is required for login');
+    }
+
+    const email = loginData.email.toLowerCase().trim();
+    const password = loginData.password;
+
+    // Find user by email
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    // Verify password
+    if (!user.hasPassword()) {
+      throw new UnauthorizedError('User has no password set. Please use alternative authentication method.');
+    }
+
+    const isValidPassword = await user.verifyPassword(password);
+    if (!isValidPassword) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    // Generate JWT tokens
+    const tokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const tokens = this.jwtService.generateTokens(tokenPayload);
+
+    // Return login response
+    return {
+      user: this.mapToResponseDto(user),
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn,
+    };
   }
 
   /**

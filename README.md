@@ -10,7 +10,7 @@ A RESTful API for managing interconnected topics and resources with version cont
 - 👥 **User Roles**: Admin, Editor, and Viewer roles with Strategy pattern permissions
 - 🔍 **Path Finding**: Custom shortest path algorithm between topics using BFS
 - 📚 **Resource Management**: Associate external resources with topics
-- 🛡️ **Security**: Input validation, sanitization, and role-based access control
+- 🛡️ **Security**: JWT authentication, bcrypt password hashing, input validation, and role-based access control
 - 🧪 **Testing**: Comprehensive test coverage with unit and integration tests
 
 ## Quick Start
@@ -39,6 +39,11 @@ A RESTful API for managing interconnected topics and resources with version cont
 
    ```bash
    cp .env.example .env
+   # Edit .env file and configure:
+   # - JWT_ACCESS_SECRET: Secret key for JWT access tokens
+   # - JWT_REFRESH_SECRET: Secret key for JWT refresh tokens  
+   # - JWT_ACCESS_EXPIRY: Access token expiration (e.g., '1h')
+   # - JWT_REFRESH_EXPIRY: Refresh token expiration (e.g., '7d')
    ```
 
 4. **Initialize database**
@@ -85,46 +90,100 @@ http://localhost:3000/api/v1
 GET /health
 ```
 
-### User Management
+### Authentication
 
 #### Register User
 
 ```http
-POST /api/v1/users
+POST /api/v1/users/register
 ```
 
 ```json
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "role": "Editor"
+  "role": "Editor",
+  "password": "securepassword123"
 }
 ```
 
-#### Authenticate User
+#### Login User
 
 ```http
-POST /api/v1/users/authenticate
+POST /api/v1/users/login
 ```
 
 ```json
 {
-  "email": "john@example.com"
+  "email": "john@example.com",
+  "password": "securepassword123"
 }
 ```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "user_001",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "Editor",
+      "isAdmin": false,
+      "canEdit": true,
+      "isViewerOnly": false
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expiresIn": 3600
+  }
+}
+```
+
+### User Management
 
 #### Get Users
 
 ```http
 GET /api/v1/users?search=john&role=Editor
+Authorization: Bearer <jwt-token>
+```
+
+#### Get User by ID
+
+```http
+GET /api/v1/users/:id
+Authorization: Bearer <jwt-token>
+```
+
+#### Update User
+
+```http
+PUT /api/v1/users/:id
+Authorization: Bearer <jwt-token>
+```
+
+```json
+{
+  "name": "John Smith",
+  "email": "john.smith@example.com"
+}
+```
+
+#### Delete User (Admin only)
+
+```http
+DELETE /api/v1/users/:id
+Authorization: Bearer <admin-jwt-token>
 ```
 
 ### Topic Management
 
-#### Create Topic
+#### Create Topic (Admin/Editor only)
 
 ```http
 POST /api/v1/topics
+Authorization: Bearer <jwt-token>
 ```
 
 ```json
@@ -139,37 +198,50 @@ POST /api/v1/topics
 
 ```http
 GET /api/v1/topics/:id?version=2
+Authorization: Bearer <jwt-token> (optional for read operations)
 ```
 
-#### Update Topic
+#### Get All Topics
+
+```http
+GET /api/v1/topics
+Authorization: Bearer <jwt-token> (optional for read operations)
+```
+
+#### Update Topic (Admin/Editor only)
 
 ```http
 PUT /api/v1/topics/:id
+Authorization: Bearer <jwt-token>
 ```
 
-#### Delete Topic
+#### Delete Topic (Admin only)
 
 ```http
 DELETE /api/v1/topics/:id
+Authorization: Bearer <admin-jwt-token>
 ```
 
 #### Get Topic Hierarchy
 
 ```http
 GET /api/v1/topics/:id/hierarchy?maxDepth=5
+Authorization: Bearer <jwt-token> (optional for read operations)
 ```
 
 ### Resource Management
 
-#### Create Resource
+#### Create Resource (Admin/Editor only)
 
 ```http
 POST /api/v1/resources
+Authorization: Bearer <jwt-token>
 ```
 
 ```json
 {
   "topicId": "topic_001",
+  "name": "ML Guide",
   "url": "https://example.com/article",
   "description": "Comprehensive guide to machine learning",
   "type": "article"
@@ -180,6 +252,28 @@ POST /api/v1/resources
 
 ```http
 GET /api/v1/resources?search=guide&type=article
+Authorization: Bearer <jwt-token> (optional for read operations)
+```
+
+#### Get Resource by ID
+
+```http
+GET /api/v1/resources/:id
+Authorization: Bearer <jwt-token> (optional for read operations)
+```
+
+#### Update Resource (Admin/Editor only)
+
+```http
+PUT /api/v1/resources/:id
+Authorization: Bearer <jwt-token>
+```
+
+#### Delete Resource (Admin only)
+
+```http
+DELETE /api/v1/resources/:id
+Authorization: Bearer <admin-jwt-token>
 ```
 
 ### Path Finding
@@ -187,13 +281,8 @@ GET /api/v1/resources?search=guide&type=article
 #### Find Shortest Path
 
 ```http
-GET /api/v1/topics/:startId/path/:endId
-```
-
-#### Find Nearby Topics
-
-```http
-GET /api/v1/topics/:topicId/nearby?distance=3
+GET /api/v1/path/find?startTopicId=topic_001&endTopicId=topic_002
+Authorization: Bearer <jwt-token>
 ```
 
 ## Architecture
@@ -203,19 +292,27 @@ The project follows Clean Architecture principles with the following structure:
 ```
 src/
 ├── domain/              # Business entities and interfaces
-│   ├── entities/        # Domain entities
-│   ├── interfaces/      # Domain interfaces
-│   └── repositories/    # Repository interfaces
+│   ├── entities/        # Domain entities (User, Topic, Resource)
+│   ├── enums/          # Domain enumerations
+│   ├── strategies/     # Permission strategies
+│   ├── factories/      # Factory pattern implementations
+│   ├── utils/          # Domain utilities
+│   └── repositories/   # Repository interfaces
 ├── application/         # Business logic layer
 │   ├── services/        # Business services
-│   └── dtos/           # Data Transfer Objects
+│   ├── dtos/           # Data Transfer Objects
+│   └── errors/         # Custom error classes
 ├── infrastructure/      # External concerns
 │   ├── server/         # Express server setup
-│   ├── middleware/     # Custom middleware
+│   ├── middleware/     # Authentication, validation middleware
 │   ├── repositories/   # Repository implementations
-│   ├── database/       # Database layer
-│   └── config/         # Configuration
+│   ├── database/       # JSON file database
+│   ├── controllers/    # HTTP controllers
+│   ├── routes/         # Route definitions
+│   └── services/       # Infrastructure services (JWT)
 └── test/               # Test utilities and setup
+    ├── utils/          # Test utilities (JwtTestUtils, TestServer)
+    └── performance/    # Performance tests
 ```
 
 ## Development
@@ -250,11 +347,23 @@ npm run db:validate      # Validate database integrity
 
 - **TypeScript** for type safety
 - **Express.js** for HTTP server
+- **JWT (jsonwebtoken)** for authentication
+- **bcrypt** for password hashing
+- **class-validator** for DTO validation
+- **class-transformer** for data transformation
 - **Jest** for testing
 - **ESLint + Prettier** for code quality
 - **JSON file-based database** for simplicity
 - **Clean Architecture** with SOLID principles
 - **Design Patterns**: Factory, Strategy, Composite, Repository
+
+## Security Features
+
+- **JWT Authentication**: Stateless authentication with access and refresh tokens
+- **Password Security**: bcrypt hashing with salt rounds (max 72 characters)
+- **Role-Based Access Control**: Admin, Editor, and Viewer permissions
+- **Input Validation**: DTO validation with class-validator
+- **Authorization Middleware**: JWT token verification and user validation
 
 ## Contributing
 

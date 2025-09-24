@@ -1,21 +1,25 @@
 import request from 'supertest';
-import express, { Express } from 'express';
-import { AppServer } from '../../../server/AppServer';
+import { Application } from 'express';
 import { FileDatabase } from '../../../database/FileDatabase';
 import { User } from '../../../../domain/entities/User';
-import { UserRole } from '../../../../domain/enums/UserRole';
 import { ResourceType } from '../../../../domain/enums/ResourceType';
+import { JwtTestUtils, TestServer } from '../../../../test/utils';
+import { UserRepository } from '../../../repositories/UserRepository';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 describe('ResourceController Integration Tests', () => {
-  let app: Express;
-  let server: AppServer;
+  let app: Application;
+  let testServer: TestServer;
   let database: FileDatabase;
+  let userRepository: UserRepository;
   let testDbPath: string;
   let adminUser: User;
   let editorUser: User;
   let viewerUser: User;
+  let adminToken: string;
+  let editorToken: string;
+  let viewerToken: string;
   let testTopicId: string;
 
   beforeAll(async () => {
@@ -27,50 +31,39 @@ describe('ResourceController Integration Tests', () => {
     database = new FileDatabase(testDbPath);
     await database.initialize();
 
-    // Initialize server with test database
-    app = express();
-    server = new AppServer(app);
-    await server.initialize();
+    // Initialize user repository
+    userRepository = new UserRepository(database);
 
-    // Create test users
-    adminUser = new User({
-      name: 'Admin User',
-      email: 'admin@test.com',
-      role: UserRole.ADMIN,
-    });
+    // Initialize test server with test database
+    testServer = new TestServer(database);
+    app = await testServer.initialize();
 
-    editorUser = new User({
-      name: 'Editor User',
-      email: 'editor@test.com',
-      role: UserRole.EDITOR,
-    });
+    // Create test users and generate JWT tokens
+    const testData = JwtTestUtils.createTestUsersWithTokens();
+    adminUser = testData.adminUser;
+    editorUser = testData.editorUser;
+    viewerUser = testData.viewerUser;
+    adminToken = testData.adminToken;
+    editorToken = testData.editorToken;
+    viewerToken = testData.viewerToken;
 
-    viewerUser = new User({
-      name: 'Viewer User',
-      email: 'viewer@test.com',
-      role: UserRole.VIEWER,
-    });
-
-    // Mock authentication middleware
-    app.use((req, _res, next) => {
-      if (req.headers.authorization === 'Bearer admin-token') {
-        req.user = adminUser;
-      } else if (req.headers.authorization === 'Bearer editor-token') {
-        req.user = editorUser;
-      } else if (req.headers.authorization === 'Bearer viewer-token') {
-        req.user = viewerUser;
-      }
-      next();
-    });
+    // Add test users to the database so JWT middleware can find them
+    await userRepository.create(adminUser);
+    await userRepository.create(editorUser);
+    await userRepository.create(viewerUser);
 
     // Create a test topic for resource association
     const topicResponse = await request(app)
       .post('/topics')
-      .set('Authorization', 'Bearer admin-token')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Resource Test Topic',
         content: 'Topic for resource testing',
       });
+
+    if (topicResponse.status !== 201 || !topicResponse.body?.data?.id) {
+      throw new Error(`Failed to create test topic. Status: ${topicResponse.status}, Body: ${JSON.stringify(topicResponse.body)}`);
+    }
 
     testTopicId = topicResponse.body.data.id;
   });
@@ -96,7 +89,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(resourceData)
         .expect(201);
 
@@ -118,7 +111,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer editor-token')
+        .set('Authorization', `Bearer ${editorToken}`)
         .send(resourceData)
         .expect(201);
 
@@ -136,7 +129,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer viewer-token')
+        .set('Authorization', `Bearer ${viewerToken}`)
         .send(resourceData)
         .expect(401);
 
@@ -169,7 +162,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(invalidData)
         .expect(400);
 
@@ -187,7 +180,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(invalidData)
         .expect(400);
 
@@ -205,7 +198,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(resourceData)
         .expect(400);
 
@@ -224,7 +217,7 @@ describe('ResourceController Integration Tests', () => {
       // Create first resource
       await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(resourceData)
         .expect(201);
 
@@ -236,7 +229,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(duplicateData)
         .expect(409);
 
@@ -259,7 +252,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(resourceData);
 
       testResourceId = response.body.data.id;
@@ -268,7 +261,7 @@ describe('ResourceController Integration Tests', () => {
     it('should retrieve resource successfully', async () => {
       const response = await request(app)
         .get(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -279,7 +272,7 @@ describe('ResourceController Integration Tests', () => {
     it('should allow viewer to read resources', async () => {
       const response = await request(app)
         .get(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer viewer-token')
+        .set('Authorization', `Bearer ${viewerToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -289,7 +282,7 @@ describe('ResourceController Integration Tests', () => {
     it('should return 404 for non-existent resource', async () => {
       const response = await request(app)
         .get('/resources/non-existent-id')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
 
       expect(response.body.success).toBe(false);
@@ -319,7 +312,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(resourceData);
 
       testResourceId = response.body.data.id;
@@ -334,7 +327,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .put(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(updateData)
         .expect(200);
 
@@ -351,7 +344,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .put(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer editor-token')
+        .set('Authorization', `Bearer ${editorToken}`)
         .send(updateData)
         .expect(200);
 
@@ -366,7 +359,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .put(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer viewer-token')
+        .set('Authorization', `Bearer ${viewerToken}`)
         .send(updateData)
         .expect(401);
 
@@ -380,7 +373,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .put('/resources/non-existent-id')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(updateData)
         .expect(404);
 
@@ -402,7 +395,7 @@ describe('ResourceController Integration Tests', () => {
 
       const response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(resourceData);
 
       testResourceId = response.body.data.id;
@@ -411,7 +404,7 @@ describe('ResourceController Integration Tests', () => {
     it('should delete resource successfully with admin user', async () => {
       const response = await request(app)
         .delete(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -420,14 +413,14 @@ describe('ResourceController Integration Tests', () => {
       // Verify resource is deleted
       await request(app)
         .get(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });
 
     it('should reject delete for editor user', async () => {
       const response = await request(app)
         .delete(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer editor-token')
+        .set('Authorization', `Bearer ${editorToken}`)
         .expect(401);
 
       expect(response.body.success).toBe(false);
@@ -436,7 +429,7 @@ describe('ResourceController Integration Tests', () => {
     it('should reject delete for viewer user', async () => {
       const response = await request(app)
         .delete(`/resources/${testResourceId}`)
-        .set('Authorization', 'Bearer viewer-token')
+        .set('Authorization', `Bearer ${viewerToken}`)
         .expect(401);
 
       expect(response.body.success).toBe(false);
@@ -445,7 +438,7 @@ describe('ResourceController Integration Tests', () => {
     it('should return 404 for non-existent resource', async () => {
       const response = await request(app)
         .delete('/resources/non-existent-id')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
 
       expect(response.body.success).toBe(false);
@@ -461,7 +454,7 @@ describe('ResourceController Integration Tests', () => {
       // Create a topic for resource association testing
       const topicResponse = await request(app)
         .post('/topics')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Topic with Resources',
           content: 'This topic will have multiple resources',
@@ -472,7 +465,7 @@ describe('ResourceController Integration Tests', () => {
       // Create multiple resources for this topic
       const resource1Response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           topicId: topicWithResourcesId,
           url: 'https://example.com/resource-1',
@@ -482,7 +475,7 @@ describe('ResourceController Integration Tests', () => {
 
       const resource2Response = await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           topicId: topicWithResourcesId,
           url: 'https://example.com/resource-2',
@@ -497,7 +490,7 @@ describe('ResourceController Integration Tests', () => {
     it('should retrieve all resources for a topic', async () => {
       const response = await request(app)
         .get(`/topics/${topicWithResourcesId}/resources`)
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -511,7 +504,7 @@ describe('ResourceController Integration Tests', () => {
     it('should allow viewer to read topic resources', async () => {
       const response = await request(app)
         .get(`/topics/${topicWithResourcesId}/resources`)
-        .set('Authorization', 'Bearer viewer-token')
+        .set('Authorization', `Bearer ${viewerToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -521,7 +514,7 @@ describe('ResourceController Integration Tests', () => {
     it('should return empty array for topic with no resources', async () => {
       const response = await request(app)
         .get(`/topics/${testTopicId}/resources`)
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -531,7 +524,7 @@ describe('ResourceController Integration Tests', () => {
     it('should return 404 for non-existent topic', async () => {
       const response = await request(app)
         .get('/topics/non-existent-topic/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
 
       expect(response.body.success).toBe(false);
@@ -543,7 +536,7 @@ describe('ResourceController Integration Tests', () => {
       // Create searchable resources
       await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           topicId: testTopicId,
           url: 'https://example.com/searchable-1',
@@ -553,7 +546,7 @@ describe('ResourceController Integration Tests', () => {
 
       await request(app)
         .post('/resources')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           topicId: testTopicId,
           url: 'https://example.com/searchable-2',
@@ -565,7 +558,7 @@ describe('ResourceController Integration Tests', () => {
     it('should search resources successfully', async () => {
       const response = await request(app)
         .get('/resources/search?q=searchable')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -576,7 +569,7 @@ describe('ResourceController Integration Tests', () => {
     it('should filter by resource type', async () => {
       const response = await request(app)
         .get(`/resources/search?q=searchable&type=${ResourceType.VIDEO}`)
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -592,7 +585,7 @@ describe('ResourceController Integration Tests', () => {
     it('should require search query parameter', async () => {
       const response = await request(app)
         .get('/resources/search')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -602,7 +595,7 @@ describe('ResourceController Integration Tests', () => {
     it('should allow viewer to search', async () => {
       const response = await request(app)
         .get('/resources/search?q=resource')
-        .set('Authorization', 'Bearer viewer-token')
+        .set('Authorization', `Bearer ${viewerToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -613,7 +606,7 @@ describe('ResourceController Integration Tests', () => {
     it('should retrieve recent resources', async () => {
       const response = await request(app)
         .get('/resources/recent?limit=5')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -624,7 +617,7 @@ describe('ResourceController Integration Tests', () => {
     it('should validate limit parameter', async () => {
       const response = await request(app)
         .get('/resources/recent?limit=0')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -634,7 +627,7 @@ describe('ResourceController Integration Tests', () => {
     it('should use default limit when not specified', async () => {
       const response = await request(app)
         .get('/resources/recent')
-        .set('Authorization', 'Bearer admin-token')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -644,7 +637,7 @@ describe('ResourceController Integration Tests', () => {
     it('should allow viewer to access recent resources', async () => {
       const response = await request(app)
         .get('/resources/recent')
-        .set('Authorization', 'Bearer viewer-token')
+        .set('Authorization', `Bearer ${viewerToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);

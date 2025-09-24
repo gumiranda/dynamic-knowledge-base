@@ -2,6 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { User } from '../../domain/entities/User';
 import { UserRole } from '../../domain/enums/UserRole';
 import { UnauthorizedError } from '../../application/errors/AppError';
+import { JwtService } from '../services/JwtService';
+import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { UserRepository } from '../repositories/UserRepository';
+import { FileDatabase } from '../database/FileDatabase';
 
 // Extend Express Request interface to include user
 declare global {
@@ -13,27 +17,29 @@ declare global {
 }
 
 /**
- * Authentication middleware for validating user access
- * This is a simplified implementation for demonstration purposes
+ * Authentication middleware for validating user access using JWT tokens
+ * Provides JWT-based authentication with database user validation
  */
 export class AuthMiddleware {
+  private static jwtService = new JwtService();
+  private static userRepository: IUserRepository;
+
   /**
-   * Mock authentication middleware
-   * In a real application, this would validate JWT tokens or session data
+   * Initialize the user repository (call this during app startup)
    */
-  static authenticate = (
+  static initialize(database: FileDatabase) {
+    this.userRepository = new UserRepository(database);
+  }
+  /**
+   * JWT authentication middleware
+   * Validates JWT tokens and attaches authenticated user to request
+   */
+  static authenticate = async (
     req: Request,
     _res: Response,
     next: NextFunction
-  ): void => {
+  ): Promise<void> => {
     try {
-      // For demonstration purposes, we'll create a mock user
-      // In a real application, you would:
-      // 1. Extract token from Authorization header
-      // 2. Validate the token
-      // 3. Fetch user from database
-      // 4. Attach user to request
-
       const authHeader = req.get('Authorization');
 
       if (!authHeader) {
@@ -45,33 +51,40 @@ export class AuthMiddleware {
         return next();
       }
 
-      // Simple mock implementation - extract user info from header
-      // Format: "Bearer userId:role" (e.g., "Bearer user123:Admin")
-      const token = authHeader.replace('Bearer ', '');
-      const [userId, role] = token.split(':');
+      // Extract JWT token from header
+      const token = this.jwtService.extractTokenFromHeader(authHeader);
+      
+      // Verify and decode JWT token
+      const payload = this.jwtService.verifyAccessToken(token);
 
-      if (!userId || !role) {
-        throw new UnauthorizedError('Invalid authorization format');
+      // Fetch user from database to ensure they still exist and get latest data
+      if (!this.userRepository) {
+        throw new Error('AuthMiddleware not properly initialized. Call AuthMiddleware.initialize() first.');
       }
 
-      // Validate role
-      if (!Object.values(UserRole).includes(role as UserRole)) {
-        throw new UnauthorizedError('Invalid user role');
+      const user = await this.userRepository.findById(payload.userId);
+      if (!user) {
+        throw new UnauthorizedError('User not found or has been deleted');
       }
 
-      // Create mock user object
-      const user = new User({
-        id: userId,
-        name: `User ${userId}`,
-        email: `${userId}@example.com`,
-        role: role as UserRole,
-      });
+      // Verify that user role hasn't changed since token was issued
+      if (user.role !== payload.role) {
+        throw new UnauthorizedError('User role has changed. Please login again.');
+      }
 
       // Attach user to request
       req.user = user;
       next();
     } catch (error) {
-      next(error);
+      if (error instanceof Error) {
+        if (error.message.includes('expired') || error.message.includes('invalid')) {
+          next(new UnauthorizedError(error.message));
+        } else {
+          next(error);
+        }
+      } else {
+        next(new UnauthorizedError('Authentication failed'));
+      }
     }
   };
 
@@ -124,4 +137,49 @@ export class AuthMiddleware {
       next();
     };
   };
+
+  /**
+   * Middleware for optional authentication
+   * Attempts to authenticate but doesn't fail if no token is provided
+   * Useful for endpoints that have different behavior for authenticated vs anonymous users
+   */
+  static optionalAuth = async (
+    req: Request,
+    _res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const authHeader = req.get('Authorization');
+      
+      if (!authHeader) {
+        return next(); // No token provided, continue without user
+      }
+
+      // Try to authenticate, but don't fail if token is invalid
+      try {
+        const token = this.jwtService.extractTokenFromHeader(authHeader);
+        const payload = this.jwtService.verifyAccessToken(token);
+
+        if (this.userRepository) {
+          const user = await this.userRepository.findById(payload.userId);
+          if (user && user.role === payload.role) {
+            req.user = user;
+          }
+        }
+      } catch {
+        // Ignore authentication errors for optional auth
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get JWT service instance (for use in other parts of the application)
+   */
+  static getJwtService(): JwtService {
+    return this.jwtService;
+  }
 }

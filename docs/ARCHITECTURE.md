@@ -136,10 +136,12 @@ src/infrastructure/
 │   ├── TopicRepository.ts    # Topic data persistence
 │   └── ResourceRepository.ts # Resource data persistence
 ├── middleware/
-│   ├── AuthMiddleware.ts     # Authentication handling
+│   ├── AuthMiddleware.ts     # JWT authentication handling
 │   ├── ValidationMiddleware.ts # Input validation
 │   ├── ErrorHandler.ts       # Global error handling
 │   └── LoggingMiddleware.ts  # Request/response logging
+├── services/
+│   └── JwtService.ts         # JWT token management
 ├── database/
 │   ├── FileDatabase.ts       # JSON file database
 │   └── DatabaseSchema.ts     # Database structure definition
@@ -319,9 +321,10 @@ BaseEntity (Abstract)
 ```
 Application Services
 ├── UserService
-│   ├── User registration and authentication
-│   ├── Role management
-│   └── Permission validation
+│   ├── User registration with password hashing
+│   ├── JWT-based authentication and login
+│   ├── Role management and permission validation
+│   └── User profile management
 ├── TopicService
 │   ├── CRUD operations with versioning
 │   ├── Hierarchy management
@@ -485,20 +488,36 @@ Repository Implementations
 
 ### Authentication & Authorization
 
-1. **Role-Based Access Control (RBAC)**
+1. **JWT Authentication**
+   - Stateless JWT tokens for authentication
+   - Access and refresh token strategy
+   - bcrypt password hashing with salt rounds
+   - Token expiration and renewal mechanisms
+
+2. **Role-Based Access Control (RBAC)**
    - Three-tier role system (Admin, Editor, Viewer)
    - Strategy pattern for permission handling
    - Fine-grained resource access control
+   - Role verification on each request
 
-2. **Input Validation**
+3. **Password Security**
+   - bcrypt hashing with 10 salt rounds
+   - 72-character limit (bcrypt constraint)
+   - Minimum 6-character requirement
+   - Secure password update mechanisms
+
+4. **Input Validation**
    - DTO-based validation with class-validator
+   - Email format validation
+   - Password strength requirements
    - Sanitization to prevent XSS
    - Type safety with TypeScript
 
-3. **Data Protection**
-   - Sensitive data handling
-   - Audit logging for critical operations
+5. **Data Protection**
+   - JWT payload contains minimal user data
+   - Password exclusion from API responses
    - Secure error messages (no data leakage)
+   - User role consistency validation
 
 ### Security Middleware Stack
 
@@ -509,7 +528,13 @@ Content-Type Validation
   ↓
 Input Sanitization
   ↓
-Authentication Check
+JWT Token Extraction
+  ↓
+JWT Token Verification
+  ↓
+User Database Lookup
+  ↓
+Role Verification
   ↓
 Authorization Validation
   ↓

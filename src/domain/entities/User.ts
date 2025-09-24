@@ -1,6 +1,7 @@
 import { BaseEntity } from './BaseEntity';
 import { UserRole, UserRoleUtils } from '../enums/UserRole';
 import { EntityUtils } from '../utils/EntityUtils';
+import bcrypt from 'bcryptjs';
 
 /**
  * User entity representing a system user with role-based permissions
@@ -10,6 +11,7 @@ export class User extends BaseEntity {
   name: string;
   email: string;
   role: UserRole;
+  password?: string; // Optional for backward compatibility, hashed password
   createdAt: Date;
   updatedAt: Date;
 
@@ -17,6 +19,7 @@ export class User extends BaseEntity {
     name: string;
     email: string;
     role: UserRole;
+    password?: string;
     id?: string;
     createdAt?: Date;
     updatedAt?: Date;
@@ -27,6 +30,7 @@ export class User extends BaseEntity {
     this.name = data.name;
     this.email = data.email;
     this.role = data.role;
+    this.password = data.password;
     this.createdAt = data.createdAt || EntityUtils.createTimestamp();
     this.updatedAt = data.updatedAt || EntityUtils.createTimestamp();
   }
@@ -188,10 +192,78 @@ export class User extends BaseEntity {
   }
 
   /**
-   * Creates a safe representation of the user (without sensitive data)
-   * @returns User object without sensitive information
+   * Hashes a plain text password
+   * @param plainPassword The plain text password to hash
+   * @returns Promise resolving to the hashed password
    */
-  toSafeObject(): Omit<User, 'updateTimestamp'> {
+  static async hashPassword(plainPassword: string): Promise<string> {
+    if (!plainPassword || typeof plainPassword !== 'string') {
+      throw new Error('Password must be a non-empty string');
+    }
+
+    if (plainPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters long');
+    }
+
+    if (plainPassword.length >= 72) {
+      throw new Error('Password must be less than 72 characters (bcrypt limitation)');
+    }
+
+    const saltRounds = 10;
+    return bcrypt.hash(plainPassword, saltRounds);
+  }
+
+  /**
+   * Verifies a plain text password against the hashed password
+   * @param plainPassword The plain text password to verify
+   * @returns Promise resolving to true if password matches
+   */
+  async verifyPassword(plainPassword: string): Promise<boolean> {
+    if (!this.password) {
+      return false;
+    }
+
+    if (!plainPassword || typeof plainPassword !== 'string') {
+      return false;
+    }
+
+    return bcrypt.compare(plainPassword, this.password);
+  }
+
+  /**
+   * Updates the user's password with proper hashing
+   * @param newPassword The new plain text password
+   */
+  async updatePassword(newPassword: string): Promise<void> {
+    if (!newPassword || typeof newPassword !== 'string') {
+      throw new Error('Password must be a non-empty string');
+    }
+
+    if (newPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters long');
+    }
+
+    if (newPassword.length >= 72) {
+      throw new Error('Password must be less than 72 characters (bcrypt limitation)');
+    }
+
+    this.password = await User.hashPassword(newPassword);
+    this.updateTimestamp();
+  }
+
+  /**
+   * Checks if the user has a password set
+   * @returns True if user has a password
+   */
+  hasPassword(): boolean {
+    return !!this.password;
+  }
+
+  /**
+   * Creates a safe representation of the user (without sensitive data)
+   * @returns User object without sensitive information (password excluded)
+   */
+  toSafeObject(): Omit<User, 'updateTimestamp' | 'password'> {
     return {
       id: this.id,
       name: this.name,
@@ -199,6 +271,7 @@ export class User extends BaseEntity {
       role: this.role,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
+      hasPassword: this.hasPassword.bind(this),
       isValid: this.isValid.bind(this),
       isValidName: this.isValidName.bind(this),
       isValidEmail: this.isValidEmail.bind(this),
@@ -214,6 +287,8 @@ export class User extends BaseEntity {
       getDisplayName: this.getDisplayName.bind(this),
       getRoleHierarchy: this.getRoleHierarchy.bind(this),
       toSafeObject: this.toSafeObject.bind(this),
+      verifyPassword: this.verifyPassword.bind(this),
+      updatePassword: this.updatePassword.bind(this),
     };
   }
 }

@@ -1,5 +1,7 @@
 // Export test utilities
 export { DatabaseTestUtils } from './DatabaseTestUtils';
+export { JwtTestUtils } from './JwtTestUtils';
+export { TestServer } from './TestServer';
 
 // Re-export commonly used types for convenience
 export type { ITopicRepository } from '../../domain/repositories/ITopicRepository';

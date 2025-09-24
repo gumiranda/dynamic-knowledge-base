@@ -6,6 +6,7 @@ import {
   RegisterUserDto,
   UpdateUserDto,
   AuthenticateUserDto,
+  LoginUserDto,
   AssignRoleDto,
 } from '../../application/dtos/UserDto';
 import {
@@ -38,6 +39,7 @@ export class UserController {
         name: req.body.name,
         email: req.body.email,
         role: req.body.role,
+        password: req.body.password, // Optional password field
       };
 
       // Validate role
@@ -105,6 +107,43 @@ export class UserController {
         data: {
           user: authenticatedUser,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /users/login - Login with email and password
+   */
+  public loginUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      // Validate request body
+      const loginUserDto: LoginUserDto = {
+        email: req.body.email,
+        password: req.body.password,
+      };
+
+      // Validate required fields
+      if (!loginUserDto.email) {
+        throw new ValidationError('Email is required');
+      }
+
+      if (!loginUserDto.password) {
+        throw new ValidationError('Password is required');
+      }
+
+      // Authenticate user and get JWT tokens
+      const loginResponse = await this.userService.loginUser(loginUserDto);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Login successful',
+        data: loginResponse,
       });
     } catch (error) {
       next(error);

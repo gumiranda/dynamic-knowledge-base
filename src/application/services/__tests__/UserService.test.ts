@@ -183,7 +183,11 @@ describe('UserService', () => {
       // Assert
       expect(mockUserRepository.update).toHaveBeenCalledWith(
         editorUser.id,
-        validUpdateDto
+        expect.objectContaining({
+          name: validUpdateDto.name,
+          email: validUpdateDto.email,
+          role: editorUser.role
+        })
       );
       expect(result.name).toBe(validUpdateDto.name);
       expect(result.email).toBe(validUpdateDto.email);

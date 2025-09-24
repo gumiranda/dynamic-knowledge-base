@@ -7,6 +7,7 @@ import {
   IsString,
   Length,
   Matches,
+  MinLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -22,7 +23,7 @@ export class RegisterUserDto {
   @IsString({ message: 'Name must be a string' })
   @Length(2, 100, { message: 'Name must be between 2 and 100 characters' })
   @Transform(({ value }) => value?.trim())
-  @Matches(/^[a-zA-Z\s\-'\.]+$/, {
+  @Matches(/^[a-zA-Z\s\-'\\.]+$/, {
     message:
       'Name can only contain letters, spaces, hyphens, apostrophes, and periods',
   })
@@ -38,6 +39,11 @@ export class RegisterUserDto {
     message: `Role must be one of: ${Object.values(UserRole).join(', ')}`,
   })
   role: UserRole;
+
+  @IsOptional()
+  @IsString({ message: 'Password must be a string' })
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  password?: string;
 }
 
 /**
@@ -48,7 +54,7 @@ export class UpdateUserDto {
   @IsString({ message: 'Name must be a string' })
   @Length(2, 100, { message: 'Name must be between 2 and 100 characters' })
   @Transform(({ value }) => value?.trim())
-  @Matches(/^[a-zA-Z\s\-'\.]+$/, {
+  @Matches(/^[a-zA-Z\s\-'\\.]+$/, {
     message:
       'Name can only contain letters, spaces, hyphens, apostrophes, and periods',
   })
@@ -82,15 +88,38 @@ export interface UserResponseDto {
 }
 
 /**
- * DTO for user authentication
+ * DTO for user authentication (legacy - for backward compatibility)
  */
 export class AuthenticateUserDto {
   @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Email must be a valid email address' })
   @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
-  // In a real system, this would include password or other auth credentials
-  // For this demo, we'll use email-based authentication
+}
+
+/**
+ * DTO for user login with password
+ */
+export class LoginUserDto {
+  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Email must be a valid email address' })
+  @Transform(({ value }) => value?.toLowerCase().trim())
+  email: string;
+
+  @IsNotEmpty({ message: 'Password is required' })
+  @IsString({ message: 'Password must be a string' })
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  password: string;
+}
+
+/**
+ * DTO for login response with JWT token
+ */
+export interface LoginResponseDto {
+  user: UserResponseDto;
+  accessToken: string;
+  refreshToken?: string;
+  expiresIn: number;
 }
 
 /**
