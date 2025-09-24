@@ -1,6 +1,6 @@
 # Dynamic Knowledge Base API
 
-A RESTful API for managing interconnected topics and resources with advanced features including version control, hierarchical organization, user roles, and permissions.
+A RESTful API for managing interconnected topics and resources with version control, hierarchical organization, user roles, and path finding algorithms.
 
 ## Features
 
@@ -8,32 +8,46 @@ A RESTful API for managing interconnected topics and resources with advanced fea
 - 🔄 **Version Control**: Topic versioning with Factory pattern implementation
 - 🌳 **Hierarchical Structure**: Parent-child topic relationships with Composite pattern
 - 👥 **User Roles**: Admin, Editor, and Viewer roles with Strategy pattern permissions
-- 🔍 **Path Finding**: Custom shortest path algorithm between topics
+- 🔍 **Path Finding**: Custom shortest path algorithm between topics using BFS
 - 📚 **Resource Management**: Associate external resources with topics
-- 🛡️ **Error Handling**: Comprehensive error handling and validation
-- 🧪 **Testing**: Full test coverage with unit and integration tests
+- 🛡️ **Security**: Input validation, sanitization, and role-based access control
+- 🧪 **Testing**: Comprehensive test coverage with unit and integration tests
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- npm or yarn
+- **Node.js** (v18 or higher)
+- **npm** or **yarn**
 
 ### Installation
 
-1. Clone the repository
-2. Install dependencies:
+1. **Clone the repository**
+
+   ```bash
+   git clone <repository-url>
+   cd dynamic-knowledge-base
+   ```
+
+2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
-3. Copy environment configuration:
+3. **Set up environment**
+
    ```bash
    cp .env.example .env
    ```
 
-4. Start development server:
+4. **Initialize database**
+
+   ```bash
+   npm run db:init
+   ```
+
+5. **Start development server**
    ```bash
    npm run dev
    ```
@@ -42,25 +56,145 @@ The API will be available at `http://localhost:3000`
 
 ### Available Scripts
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm test` - Run tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Run tests with coverage report
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
-- `npm run format` - Format code with Prettier
+| Script                  | Description                              |
+| ----------------------- | ---------------------------------------- |
+| `npm run dev`           | Start development server with hot reload |
+| `npm run build`         | Build for production                     |
+| `npm start`             | Start production server                  |
+| `npm test`              | Run all tests                            |
+| `npm run test:watch`    | Run tests in watch mode                  |
+| `npm run test:coverage` | Run tests with coverage report           |
+| `npm run lint`          | Run ESLint                               |
+| `npm run lint:fix`      | Fix ESLint issues automatically          |
+| `npm run format`        | Format code with Prettier                |
+| `npm run db:init`       | Initialize database with sample data     |
+| `npm run db:seed`       | Seed database with test data             |
+| `npm run db:reset`      | Reset database to initial state          |
 
-## API Endpoints
+## API Documentation
+
+### Base URL
+
+```
+http://localhost:3000/api/v1
+```
 
 ### Health Check
-- `GET /health` - System health status
 
-### API Base
-- `GET /api/v1` - API information and available endpoints
+```http
+GET /health
+```
 
-*Note: Topic, Resource, and User endpoints will be implemented in subsequent development phases.*
+### User Management
+
+#### Register User
+
+```http
+POST /api/v1/users
+```
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "role": "Editor"
+}
+```
+
+#### Authenticate User
+
+```http
+POST /api/v1/users/authenticate
+```
+
+```json
+{
+  "email": "john@example.com"
+}
+```
+
+#### Get Users
+
+```http
+GET /api/v1/users?search=john&role=Editor
+```
+
+### Topic Management
+
+#### Create Topic
+
+```http
+POST /api/v1/topics
+```
+
+```json
+{
+  "name": "Machine Learning Basics",
+  "content": "Introduction to machine learning concepts and algorithms",
+  "parentTopicId": "topic_001"
+}
+```
+
+#### Get Topic
+
+```http
+GET /api/v1/topics/:id?version=2
+```
+
+#### Update Topic
+
+```http
+PUT /api/v1/topics/:id
+```
+
+#### Delete Topic
+
+```http
+DELETE /api/v1/topics/:id
+```
+
+#### Get Topic Hierarchy
+
+```http
+GET /api/v1/topics/:id/hierarchy?maxDepth=5
+```
+
+### Resource Management
+
+#### Create Resource
+
+```http
+POST /api/v1/resources
+```
+
+```json
+{
+  "topicId": "topic_001",
+  "url": "https://example.com/article",
+  "description": "Comprehensive guide to machine learning",
+  "type": "article"
+}
+```
+
+#### Get Resources
+
+```http
+GET /api/v1/resources?search=guide&type=article
+```
+
+### Path Finding
+
+#### Find Shortest Path
+
+```http
+GET /api/v1/topics/:startId/path/:endId
+```
+
+#### Find Nearby Topics
+
+```http
+GET /api/v1/topics/:topicId/nearby?distance=3
+```
 
 ## Architecture
 
@@ -86,12 +220,41 @@ src/
 
 ## Development
 
-This project uses:
+### Running Tests
+
+```bash
+npm test                 # Run all tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Run tests with coverage
+```
+
+### Code Quality
+
+```bash
+npm run lint             # Check code style
+npm run lint:fix         # Fix code style issues
+npm run format           # Format code with Prettier
+```
+
+### Database Management
+
+```bash
+npm run db:init          # Initialize database
+npm run db:seed          # Add sample data
+npm run db:reset         # Reset database
+npm run db:backup        # Create backup
+npm run db:validate      # Validate database integrity
+```
+
+## Technologies Used
+
 - **TypeScript** for type safety
 - **Express.js** for HTTP server
 - **Jest** for testing
 - **ESLint + Prettier** for code quality
 - **JSON file-based database** for simplicity
+- **Clean Architecture** with SOLID principles
+- **Design Patterns**: Factory, Strategy, Composite, Repository
 
 ## Contributing
 

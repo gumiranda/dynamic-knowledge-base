@@ -12,7 +12,14 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "format": "prettier --write src/**/*.ts"
+    "format": "prettier --write src/**/*.ts",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean && npm run lint",
+    "db:init": "node scripts/init-database.js",
+    "db:seed": "node scripts/seed-database.js",
+    "db:reset": "node scripts/reset-database.js",
+    "db:backup": "node scripts/backup-database.js",
+    "db:validate": "node scripts/validate-database.js"
   },
   "keywords": [
     "knowledge-base",
@@ -33,6 +40,7 @@
     "eslint-plugin-prettier": "^5.0.1",
     "jest": "^29.7.0",
     "prettier": "^3.1.0",
+    "rimraf": "^5.0.5",
     "ts-jest": "^29.1.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.2.2"
