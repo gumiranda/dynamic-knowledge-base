@@ -36,8 +36,8 @@
   - Write unit tests for Resource entity
   - _Requirements: 5.1, 5.2, 5.5_
 
-- [ ] 3. Implement Factory pattern for version control
-- [ ] 3.1 Create Topic Version Factory
+- [x] 3. Implement Factory pattern for version control
+- [x] 3.1 Create Topic Version Factory
   - Implement ITopicVersionFactory interface
   - Create TopicVersionFactory class with version creation logic
   - Add version increment and timestamp update functionality
