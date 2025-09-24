@@ -205,7 +205,13 @@ export class PerformanceTestUtils {
       error?: string;
     }>
   > {
-    const results = [];
+    const results: Array<{
+      inputSize: number;
+      averageTime: number;
+      timeComplexity: string;
+      successful: boolean;
+      error?: string;
+    }> = [];
     const iterations = options.iterations || 5;
     const timeoutMs = options.timeoutMs || 30000;
 

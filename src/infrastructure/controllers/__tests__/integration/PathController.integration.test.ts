@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { Express } from 'express';
+import express, { Express } from 'express';
 import { AppServer } from '../../../server/AppServer';
 import { FileDatabase } from '../../../database/FileDatabase';
 import { User } from '../../../../domain/entities/User';
@@ -30,8 +30,9 @@ describe('PathController Integration Tests', () => {
     await database.initialize();
 
     // Initialize server with test database
-    server = new AppServer(database);
-    app = server.getApp();
+    app = express();
+    server = new AppServer(app);
+    await server.initialize();
 
     // Create test users
     adminUser = new User({
@@ -53,7 +54,7 @@ describe('PathController Integration Tests', () => {
     });
 
     // Mock authentication middleware
-    app.use((req, res, next) => {
+    app.use((req, _res, next) => {
       if (req.headers.authorization === 'Bearer admin-token') {
         req.user = adminUser;
       } else if (req.headers.authorization === 'Bearer editor-token') {

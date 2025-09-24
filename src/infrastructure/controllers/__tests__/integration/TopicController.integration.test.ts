@@ -1,9 +1,8 @@
 import request from 'supertest';
-import { Express } from 'express';
+import express, { Express } from 'express';
 import { AppServer } from '../../../server/AppServer';
 import { FileDatabase } from '../../../database/FileDatabase';
 import { User } from '../../../../domain/entities/User';
-import { Topic } from '../../../../domain/entities/Topic';
 import { UserRole } from '../../../../domain/enums/UserRole';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -16,7 +15,6 @@ describe('TopicController Integration Tests', () => {
   let adminUser: User;
   let editorUser: User;
   let viewerUser: User;
-  let authToken: string;
 
   beforeAll(async () => {
     // Create temporary database for testing
@@ -25,8 +23,9 @@ describe('TopicController Integration Tests', () => {
     await database.initialize();
 
     // Initialize server with test database
-    server = new AppServer(database);
-    app = server.getApp();
+    app = express();
+    server = new AppServer(app);
+    await server.initialize();
 
     // Create test users
     adminUser = new User({
@@ -48,7 +47,7 @@ describe('TopicController Integration Tests', () => {
     });
 
     // Mock authentication middleware to set user
-    app.use((req, res, next) => {
+    app.use((req, _res, next) => {
       if (req.headers.authorization === 'Bearer admin-token') {
         req.user = adminUser;
       } else if (req.headers.authorization === 'Bearer editor-token') {

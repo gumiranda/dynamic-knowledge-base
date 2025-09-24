@@ -325,7 +325,7 @@ export class ServiceMocks {
       async (topic) => topic
     );
     repositories.topicRepository.update.mockImplementation(
-      async (id, topic) => topic as any
+      async (_id, topic) => topic as any
     );
     repositories.topicRepository.findById.mockResolvedValue(null);
     repositories.topicRepository.exists.mockResolvedValue(true);
@@ -335,7 +335,7 @@ export class ServiceMocks {
       async (resource) => resource
     );
     repositories.resourceRepository.update.mockImplementation(
-      async (id, resource) => resource as any
+      async (_id, resource) => resource as any
     );
     repositories.resourceRepository.findById.mockResolvedValue(null);
     repositories.resourceRepository.existsByTopicAndUrl.mockResolvedValue(
@@ -344,7 +344,7 @@ export class ServiceMocks {
 
     repositories.userRepository.create.mockImplementation(async (user) => user);
     repositories.userRepository.update.mockImplementation(
-      async (id, user) => user as any
+      async (_id, user) => user as any
     );
     repositories.userRepository.findById.mockResolvedValue(null);
     repositories.userRepository.findByEmail.mockResolvedValue(null);

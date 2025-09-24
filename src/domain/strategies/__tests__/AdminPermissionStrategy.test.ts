@@ -41,14 +41,12 @@ describe('AdminPermissionStrategy', () => {
     });
 
     it('should return true for admin users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
-      expect(strategy.canRead(adminUser, mockResource)).toBe(true);
+      expect(strategy.canRead(adminUser)).toBe(true);
     });
 
     it('should return false for non-admin users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
-      expect(strategy.canRead(editorUser, mockResource)).toBe(false);
-      expect(strategy.canRead(viewerUser, mockResource)).toBe(false);
+      expect(strategy.canRead(editorUser)).toBe(false);
+      expect(strategy.canRead(viewerUser)).toBe(false);
     });
   });
 
@@ -63,14 +61,12 @@ describe('AdminPermissionStrategy', () => {
     });
 
     it('should return true for admin users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
-      expect(strategy.canWrite(adminUser, mockResource)).toBe(true);
+      expect(strategy.canWrite(adminUser)).toBe(true);
     });
 
     it('should return false for non-admin users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
-      expect(strategy.canWrite(editorUser, mockResource)).toBe(false);
-      expect(strategy.canWrite(viewerUser, mockResource)).toBe(false);
+      expect(strategy.canWrite(editorUser)).toBe(false);
+      expect(strategy.canWrite(viewerUser)).toBe(false);
     });
   });
 
@@ -85,14 +81,12 @@ describe('AdminPermissionStrategy', () => {
     });
 
     it('should return true for admin users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
-      expect(strategy.canDelete(adminUser, mockResource)).toBe(true);
+      expect(strategy.canDelete(adminUser)).toBe(true);
     });
 
     it('should return false for non-admin users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
-      expect(strategy.canDelete(editorUser, mockResource)).toBe(false);
-      expect(strategy.canDelete(viewerUser, mockResource)).toBe(false);
+      expect(strategy.canDelete(editorUser)).toBe(false);
+      expect(strategy.canDelete(viewerUser)).toBe(false);
     });
   });
 

@@ -50,7 +50,7 @@ app.post(
   ValidationUtils.contentType,
   ValidationUtils.sanitize,
   ValidationUtils.validateRegisterUser,
-  (req, res) => {
+  (_req, res) => {
     res.json({ message: 'Custom validation passed' });
   }
 );

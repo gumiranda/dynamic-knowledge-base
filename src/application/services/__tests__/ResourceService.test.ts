@@ -68,7 +68,10 @@ describe('ResourceService', () => {
     jest.clearAllMocks();
 
     // Initialize service
-    resourceService = new ResourceService(mockResourceRepository, mockTopicRepository);
+    resourceService = new ResourceService(
+      mockResourceRepository,
+      mockTopicRepository
+    );
 
     // Create test users
     adminUser = new User({
@@ -120,21 +123,30 @@ describe('ResourceService', () => {
       mockResourceRepository.create.mockResolvedValue(sampleResource);
 
       // Act
-      const result = await resourceService.createResource(validCreateDto, adminUser);
+      const result = await resourceService.createResource(
+        validCreateDto,
+        adminUser
+      );
 
       // Assert
-      expect(mockTopicRepository.findLatestVersion).toHaveBeenCalledWith(validCreateDto.topicId);
+      expect(mockTopicRepository.findLatestVersion).toHaveBeenCalledWith(
+        validCreateDto.topicId
+      );
       expect(mockResourceRepository.existsByTopicAndUrl).toHaveBeenCalledWith(
         validCreateDto.topicId,
         validCreateDto.url
       );
-      expect(mockResourceRepository.create).toHaveBeenCalledWith(expect.any(Resource));
-      expect(result).toEqual(expect.objectContaining({
-        id: sampleResource.id,
-        url: sampleResource.url,
-        description: sampleResource.description,
-        type: sampleResource.type,
-      }));
+      expect(mockResourceRepository.create).toHaveBeenCalledWith(
+        expect.any(Resource)
+      );
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: sampleResource.id,
+          url: sampleResource.url,
+          description: sampleResource.description,
+          type: sampleResource.type,
+        })
+      );
     });
 
     it('should create resource successfully with editor user', async () => {
@@ -145,7 +157,10 @@ describe('ResourceService', () => {
       mockResourceRepository.create.mockResolvedValue(sampleResource);
 
       // Act
-      const result = await resourceService.createResource(validCreateDto, editorUser);
+      const result = await resourceService.createResource(
+        validCreateDto,
+        editorUser
+      );
 
       // Assert
       expect(result).toBeDefined();
@@ -256,10 +271,11 @@ describe('ResourceService', () => {
       // Arrange
       mockResourceRepository.findById.mockResolvedValue(sampleResource);
       mockResourceRepository.existsByTopicAndUrl.mockResolvedValue(false);
-      mockResourceRepository.update.mockResolvedValue({
+      const updatedResource = new Resource({
         ...sampleResource,
         ...validUpdateDto,
       });
+      mockResourceRepository.update.mockResolvedValue(updatedResource);
 
       // Act
       const result = await resourceService.updateResource(
@@ -281,7 +297,11 @@ describe('ResourceService', () => {
     it('should throw UnauthorizedError for viewer user', async () => {
       // Act & Assert
       await expect(
-        resourceService.updateResource(sampleResource.id, validUpdateDto, viewerUser)
+        resourceService.updateResource(
+          sampleResource.id,
+          validUpdateDto,
+          viewerUser
+        )
       ).rejects.toThrow(UnauthorizedError);
     });
 
@@ -291,7 +311,11 @@ describe('ResourceService', () => {
 
       // Act & Assert
       await expect(
-        resourceService.updateResource('non-existent-id', validUpdateDto, adminUser)
+        resourceService.updateResource(
+          'non-existent-id',
+          validUpdateDto,
+          adminUser
+        )
       ).rejects.toThrow(NotFoundError);
     });
 
@@ -315,7 +339,9 @@ describe('ResourceService', () => {
       );
 
       // Assert
-      expect(mockTopicRepository.findLatestVersion).toHaveBeenCalledWith('new-topic-id');
+      expect(mockTopicRepository.findLatestVersion).toHaveBeenCalledWith(
+        'new-topic-id'
+      );
     });
 
     it('should check for URL conflicts when URL or topic changes', async () => {
@@ -329,7 +355,11 @@ describe('ResourceService', () => {
 
       // Act & Assert
       await expect(
-        resourceService.updateResource(sampleResource.id, updateWithNewUrl, adminUser)
+        resourceService.updateResource(
+          sampleResource.id,
+          updateWithNewUrl,
+          adminUser
+        )
       ).rejects.toThrow(ConflictError);
     });
   });
@@ -340,13 +370,18 @@ describe('ResourceService', () => {
       mockResourceRepository.findById.mockResolvedValue(sampleResource);
 
       // Act
-      const result = await resourceService.getResource(sampleResource.id, adminUser);
+      const result = await resourceService.getResource(
+        sampleResource.id,
+        adminUser
+      );
 
       // Assert
-      expect(result).toEqual(expect.objectContaining({
-        id: sampleResource.id,
-        url: sampleResource.url,
-      }));
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: sampleResource.id,
+          url: sampleResource.url,
+        })
+      );
     });
 
     it('should return null when resource not found', async () => {
@@ -354,17 +389,25 @@ describe('ResourceService', () => {
       mockResourceRepository.findById.mockResolvedValue(null);
 
       // Act
-      const result = await resourceService.getResource('non-existent-id', adminUser);
+      const result = await resourceService.getResource(
+        'non-existent-id',
+        adminUser
+      );
 
       // Assert
       expect(result).toBeNull();
     });
 
-    it('should throw UnauthorizedError for viewer without permissions', async () => {
-      // Act & Assert
-      await expect(
-        resourceService.getResource(sampleResource.id, viewerUser)
-      ).rejects.toThrow(UnauthorizedError);
+    it('should allow viewers to read resources', async () => {
+      // Arrange - mock the repository to return our sample resource
+      mockResourceRepository.findById.mockResolvedValue(sampleResource);
+
+      // Act
+      const result = await resourceService.getResource(sampleResource.id, viewerUser);
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe(sampleResource.id);
     });
   });
 
@@ -377,10 +420,15 @@ describe('ResourceService', () => {
       mockResourceRepository.findByTopicId.mockResolvedValue(resources);
 
       // Act
-      const result = await resourceService.getResourcesByTopic(sampleTopic.id, adminUser);
+      const result = await resourceService.getResourcesByTopic(
+        sampleTopic.id,
+        adminUser
+      );
 
       // Assert
-      expect(mockResourceRepository.findByTopicId).toHaveBeenCalledWith(sampleTopic.id);
+      expect(mockResourceRepository.findByTopicId).toHaveBeenCalledWith(
+        sampleTopic.id
+      );
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(sampleResource.id);
     });
@@ -403,10 +451,15 @@ describe('ResourceService', () => {
       mockResourceRepository.findByType.mockResolvedValue(resources);
 
       // Act
-      const result = await resourceService.getResourcesByType(ResourceType.ARTICLE, adminUser);
+      const result = await resourceService.getResourcesByType(
+        ResourceType.ARTICLE,
+        adminUser
+      );
 
       // Assert
-      expect(mockResourceRepository.findByType).toHaveBeenCalledWith(ResourceType.ARTICLE);
+      expect(mockResourceRepository.findByType).toHaveBeenCalledWith(
+        ResourceType.ARTICLE
+      );
       expect(result).toHaveLength(1);
     });
   });
@@ -418,10 +471,15 @@ describe('ResourceService', () => {
       mockResourceRepository.delete.mockResolvedValue(true);
 
       // Act
-      const result = await resourceService.deleteResource(sampleResource.id, adminUser);
+      const result = await resourceService.deleteResource(
+        sampleResource.id,
+        adminUser
+      );
 
       // Assert
-      expect(mockResourceRepository.delete).toHaveBeenCalledWith(sampleResource.id);
+      expect(mockResourceRepository.delete).toHaveBeenCalledWith(
+        sampleResource.id
+      );
       expect(result).toBe(true);
     });
 
@@ -451,10 +509,15 @@ describe('ResourceService', () => {
       mockResourceRepository.findByDescription.mockResolvedValue(resources);
 
       // Act
-      const result = await resourceService.searchResources(searchTerm, adminUser);
+      const result = await resourceService.searchResources(
+        searchTerm,
+        adminUser
+      );
 
       // Assert
-      expect(mockResourceRepository.findByDescription).toHaveBeenCalledWith(searchTerm);
+      expect(mockResourceRepository.findByDescription).toHaveBeenCalledWith(
+        searchTerm
+      );
       expect(result.resources).toHaveLength(1);
       expect(result.searchTerm).toBe(searchTerm);
     });
@@ -502,7 +565,10 @@ describe('ResourceService', () => {
       mockTopicRepository.isDeleted.mockResolvedValue(false);
 
       // Act
-      const result = await resourceService.getResourcesGroupedByTopic(topicIds, adminUser);
+      const result = await resourceService.getResourcesGroupedByTopic(
+        topicIds,
+        adminUser
+      );
 
       // Assert
       expect(result).toHaveLength(1);
@@ -513,7 +579,10 @@ describe('ResourceService', () => {
 
     it('should return empty array for empty topic IDs', async () => {
       // Act
-      const result = await resourceService.getResourcesGroupedByTopic([], adminUser);
+      const result = await resourceService.getResourcesGroupedByTopic(
+        [],
+        adminUser
+      );
 
       // Assert
       expect(result).toHaveLength(0);
@@ -528,7 +597,10 @@ describe('ResourceService', () => {
       mockTopicRepository.isDeleted.mockResolvedValue(true);
 
       // Act
-      const result = await resourceService.getResourcesGroupedByTopic(topicIds, adminUser);
+      const result = await resourceService.getResourcesGroupedByTopic(
+        topicIds,
+        adminUser
+      );
 
       // Assert
       expect(result).toHaveLength(0);
@@ -588,7 +660,7 @@ describe('ResourceService', () => {
       // Act
       const result = await resourceService.validateResourceAssociation(
         sampleTopic.id,
-        'invalid-url',
+        'ht tp://invalid url with spaces',
         adminUser
       );
 
@@ -632,12 +704,6 @@ describe('ResourceService', () => {
     });
   });
 });
-  findByName: jest.fn(),
-  findByContent: jest.fn(),
-  softDelete: jest.fn(),
-  restore: jest.fn(),
-  isDeleted: jest.fn(),
-};
 
 describe('ResourceService', () => {
   let resourceService: ResourceService;

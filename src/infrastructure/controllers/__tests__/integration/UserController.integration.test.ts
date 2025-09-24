@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { Express } from 'express';
+import express, { Express } from 'express';
 import { AppServer } from '../../../server/AppServer';
 import { FileDatabase } from '../../../database/FileDatabase';
 import { User } from '../../../../domain/entities/User';
@@ -25,9 +25,10 @@ describe('UserController Integration Tests', () => {
     database = new FileDatabase(testDbPath);
     await database.initialize();
 
-    // Initialize server with test database
-    server = new AppServer(database);
-    app = server.getApp();
+    // Initialize Express app and server
+    app = express();
+    server = new AppServer(app);
+    await server.initialize();
 
     // Create test users
     adminUser = new User({
@@ -49,7 +50,7 @@ describe('UserController Integration Tests', () => {
     });
 
     // Mock authentication middleware
-    app.use((req, res, next) => {
+    app.use((req, _res, next) => {
       if (req.headers.authorization === 'Bearer admin-token') {
         req.user = adminUser;
       } else if (req.headers.authorization === 'Bearer editor-token') {
@@ -70,8 +71,7 @@ describe('UserController Integration Tests', () => {
       // Ignore cleanup errors
     }
   });
-  desc;
-  ribe('POST /users', () => {
+  describe('POST /users', () => {
     it('should register user successfully by admin', async () => {
       const userData = {
         name: 'New Test User',
@@ -344,9 +344,9 @@ describe('UserController Integration Tests', () => {
 
     it('should allow user to update themselves', async () => {
       // Mock the user updating themselves
-      app.use((req, res, next) => {
+      app.use((req, _res, next) => {
         if (req.headers.authorization === 'Bearer self-token') {
-          req.user = { ...editorUser, id: testUserId };
+          req.user = new User({ ...editorUser, id: testUserId } as any);
         }
         next();
       });
@@ -381,9 +381,9 @@ describe('UserController Integration Tests', () => {
 
     it('should prevent admin self-demotion', async () => {
       // Mock admin updating themselves
-      app.use((req, res, next) => {
+      app.use((req, _res, next) => {
         if (req.headers.authorization === 'Bearer admin-self-token') {
-          req.user = { ...adminUser, id: testUserId };
+          req.user = new User({ ...adminUser, id: testUserId } as any);
         }
         next();
       });
@@ -625,9 +625,9 @@ describe('UserController Integration Tests', () => {
 
     it('should prevent admin self-deletion', async () => {
       // Mock admin deleting themselves
-      app.use((req, res, next) => {
+      app.use((req, _res, next) => {
         if (req.headers.authorization === 'Bearer admin-self-delete-token') {
-          req.user = { ...adminUser, id: testUserId };
+          req.user = new User({ ...adminUser, id: testUserId } as any);
         }
         next();
       });

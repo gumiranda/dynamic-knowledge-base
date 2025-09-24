@@ -1,12 +1,10 @@
 import { TopicPathFinder } from '../../application/services/TopicPathFinder';
 import { ITopicRepository } from '../../domain/repositories/ITopicRepository';
-import { Topic } from '../../domain/entities/Topic';
-import { PerformanceTestUtils, MockFactories, TestHelpers } from '../utils';
+import { PerformanceTestUtils, MockFactories } from '../utils';
 
 describe('TopicPathFinder Performance Tests', () => {
   let pathFinder: TopicPathFinder;
   let mockRepository: jest.Mocked<ITopicRepository>;
-  let testTopics: Topic[];
 
   beforeAll(() => {
     // Create mock repository

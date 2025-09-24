@@ -41,12 +41,10 @@ describe('EditorPermissionStrategy', () => {
     });
 
     it('should return true for editor users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
       expect(strategy.canRead(editorUser)).toBe(true);
     });
 
     it('should return false for non-editor users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
       expect(strategy.canRead(adminUser)).toBe(false);
       expect(strategy.canRead(viewerUser)).toBe(false);
     });
@@ -74,16 +72,11 @@ describe('EditorPermissionStrategy', () => {
 
   describe('canDelete', () => {
     it('should return false for all users including editors', () => {
-      expect(strategy.canDelete(editorUser)).toBe(false);
-      expect(strategy.canDelete(adminUser)).toBe(false);
-      expect(strategy.canDelete(viewerUser)).toBe(false);
+      expect(strategy.canDelete()).toBe(false);
     });
 
     it('should return false for all users with any resource', () => {
-      const mockResource = { id: '1', name: 'Test Resource' };
-      expect(strategy.canDelete(editorUser, mockResource)).toBe(false);
-      expect(strategy.canDelete(adminUser, mockResource)).toBe(false);
-      expect(strategy.canDelete(viewerUser, mockResource)).toBe(false);
+      expect(strategy.canDelete()).toBe(false);
     });
   });
 

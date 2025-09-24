@@ -5,6 +5,13 @@ export { DatabaseTestUtils } from './DatabaseTestUtils';
 export { ServiceMocks } from './ServiceMocks';
 export { PerformanceTestUtils } from './PerformanceTestUtils';
 
+// Import for re-export constants
+import { TestHelpers } from './TestHelpers';
+import { MockFactories } from './MockFactories';
+import { DatabaseTestUtils } from './DatabaseTestUtils';
+import { ServiceMocks } from './ServiceMocks';
+import { PerformanceTestUtils } from './PerformanceTestUtils';
+
 // Re-export commonly used types for convenience
 export type { ITopicRepository } from '../../domain/repositories/ITopicRepository';
 export type { IResourceRepository } from '../../domain/repositories/IResourceRepository';

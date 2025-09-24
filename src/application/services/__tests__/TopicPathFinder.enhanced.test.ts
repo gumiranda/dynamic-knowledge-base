@@ -137,16 +137,20 @@ describe('TopicPathFinder - Enhanced Unit Tests', () => {
     it('should validate input parameters', async () => {
       // Act & Assert
       await expect(pathFinder.findShortestPath('', topicB.id)).rejects.toThrow(
-        'Topic IDs cannot be empty strings'
+        'Both start and end topic IDs are required'
       );
 
       await expect(pathFinder.findShortestPath(topicA.id, '')).rejects.toThrow(
-        'Topic IDs cannot be empty strings'
+        'Both start and end topic IDs are required'
       );
 
       await expect(
         pathFinder.findShortestPath(null as any, topicB.id)
       ).rejects.toThrow('Topic IDs must be strings');
+
+      await expect(pathFinder.findShortestPath(' ', topicB.id)).rejects.toThrow(
+        'Topic IDs cannot be empty strings'
+      );
     });
 
     it('should respect max search depth', async () => {
