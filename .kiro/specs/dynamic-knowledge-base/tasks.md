@@ -118,8 +118,8 @@
   - Write comprehensive unit tests for path finding
   - _Requirements: 7.3, 7.5_
 
-- [ ] 8. Implement HTTP controllers and routing
-- [ ] 8.1 Create TopicController with RESTful endpoints
+- [x] 8. Implement HTTP controllers and routing
+- [x] 8.1 Create TopicController with RESTful endpoints
   - Implement POST /topics for topic creation
   - Add GET /topics/:id for topic retrieval with version support
   - Create PUT /topics/:id for topic updates
@@ -127,21 +127,21 @@
   - Implement GET /topics/:id/hierarchy for recursive retrieval
   - _Requirements: 3.1, 3.4, 3.5, 6.1_
 
-- [ ] 8.2 Create ResourceController for resource management
+- [x] 8.2 Create ResourceController for resource management
   - Implement POST /resources for resource creation
   - Add GET /resources and GET /topics/:id/resources endpoints
   - Create PUT /resources/:id and DELETE /resources/:id
   - Add resource validation middleware
   - _Requirements: 5.1, 5.3, 5.4_
 
-- [ ] 8.3 Create UserController for user operations
+- [x] 8.3 Create UserController for user operations
   - Implement POST /users for user registration
   - Add GET /users and GET /users/:id endpoints
   - Create authentication and authorization middleware
   - Implement role-based access control
   - _Requirements: 2.1, 2.4_
 
-- [ ] 8.4 Create PathController for shortest path functionality
+- [x] 8.4 Create PathController for shortest path functionality
   - Implement GET /topics/:startId/path/:endId endpoint
   - Add path validation and error handling
   - Create response formatting for path results

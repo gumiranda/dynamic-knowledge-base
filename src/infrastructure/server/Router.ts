@@ -1,4 +1,8 @@
 import { Router as ExpressRouter } from 'express';
+import { createTopicRoutes } from '../routes/topicRoutes';
+import { createResourceRoutes } from '../routes/resourceRoutes';
+import { createUserRoutes } from '../routes/userRoutes';
+import { createPathRoutes } from '../routes/pathRoutes';
 
 export class Router {
   private router: ExpressRouter;
@@ -9,7 +13,7 @@ export class Router {
   }
 
   private setupRoutes(): void {
-    // Placeholder routes - will be implemented in later tasks
+    // API information endpoint
     this.router.get('/', (_req, res) => {
       res.json({
         message: 'Dynamic Knowledge Base API v1',
@@ -17,29 +21,22 @@ export class Router {
           topics: '/api/v1/topics',
           resources: '/api/v1/resources',
           users: '/api/v1/users',
+          path: '/api/v1/path',
         },
       });
     });
 
-    // Route placeholders for future implementation
-    this.router.use('/topics', this.createPlaceholderRouter('Topics'));
-    this.router.use('/resources', this.createPlaceholderRouter('Resources'));
-    this.router.use('/users', this.createPlaceholderRouter('Users'));
-  }
+    // Topic routes (implemented)
+    this.router.use('/topics', createTopicRoutes());
 
-  private createPlaceholderRouter(entityName: string): ExpressRouter {
-    const router = ExpressRouter();
+    // Resource routes (implemented)
+    this.router.use('/resources', createResourceRoutes());
 
-    router.all('*', (req, res) => {
-      res.status(501).json({
-        status: 'not_implemented',
-        message: `${entityName} endpoints will be implemented in future tasks`,
-        method: req.method,
-        path: req.path,
-      });
-    });
+    // User routes (implemented)
+    this.router.use('/users', createUserRoutes());
 
-    return router;
+    // Path routes (implemented)
+    this.router.use('/path', createPathRoutes());
   }
 
   public getRoutes(): ExpressRouter {
