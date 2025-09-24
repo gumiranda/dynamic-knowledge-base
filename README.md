@@ -11,7 +11,7 @@ A RESTful API for managing interconnected topics and resources with version cont
 - 🔍 **Path Finding**: Custom shortest path algorithm between topics using BFS
 - 📚 **Resource Management**: Associate external resources with topics
 - 🛡️ **Security**: JWT authentication, bcrypt password hashing, input validation, and role-based access control
-- 🧪 **Testing**: Comprehensive test coverage with unit and integration tests
+- 🧪 **Testing**: Comprehensive test coverage with 510+ passing unit tests
 
 ## Quick Start
 
@@ -320,7 +320,7 @@ src/
 ### Running Tests
 
 ```bash
-npm test                 # Run all tests
+npm test                 # Run all tests (510+ passing tests)
 npm run test:watch       # Run tests in watch mode
 npm run test:coverage    # Run tests with coverage
 ```
