@@ -73,8 +73,8 @@
   - Write unit tests for all repository implementations
   - _Requirements: 3.4, 3.5, 5.3, 5.4_
 
-- [ ] 6. Implement core business services
-- [ ] 6.1 Create TopicService with CRUD operations
+- [x] 6. Implement core business services
+- [x] 6.1 Create TopicService with CRUD operations
   - Implement topic creation with permission validation
   - Add topic update with version control using Factory pattern
   - Implement topic retrieval with version support
@@ -82,21 +82,21 @@
   - Write comprehensive unit tests for TopicService
   - _Requirements: 3.1, 3.2, 3.6, 4.4_
 
-- [ ] 6.2 Implement hierarchical topic operations
+- [x] 6.2 Implement hierarchical topic operations
   - Add recursive topic hierarchy retrieval method
   - Implement parent-child relationship validation
   - Create methods for finding root topics and orphaned topics
   - Write unit tests for hierarchy operations
   - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 6.3 Create ResourceService for resource management
+- [x] 6.3 Create ResourceService for resource management
   - Implement resource CRUD operations with topic validation
   - Add resource association and retrieval methods
   - Implement resource type validation and URL checking
   - Write unit tests for ResourceService
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 6.4 Implement UserService for user management
+- [x] 6.4 Implement UserService for user management
   - Create user registration and authentication methods
   - Implement role assignment and permission checking
   - Add user validation and email uniqueness checks

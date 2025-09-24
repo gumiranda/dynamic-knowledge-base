@@ -273,8 +273,8 @@ export const defaultMigrations: Migration[] = [
     down: (data: DatabaseSchema) => {
       // Remove soft delete fields
       for (const topicData of Object.values(data.topics)) {
-        delete topicData.isDeleted;
-        delete topicData.deletedAt;
+        delete (topicData as any).isDeleted;
+        delete (topicData as any).deletedAt;
       }
       return data;
     },
