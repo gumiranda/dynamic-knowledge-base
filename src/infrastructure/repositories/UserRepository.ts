@@ -378,6 +378,7 @@ export class UserRepository implements IUserRepository {
       name: user.name,
       email: user.email,
       role: user.role,
+      password: user.password,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -392,6 +393,7 @@ export class UserRepository implements IUserRepository {
       name: data.name,
       email: data.email,
       role: data.role,
+      password: data.password,
       createdAt: new Date(data.createdAt),
       updatedAt: new Date(data.updatedAt),
     });

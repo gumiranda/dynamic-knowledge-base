@@ -323,11 +323,83 @@ Authorization: Bearer <admin-jwt-token>
 
 ### Path Finding
 
-#### Find Shortest Path
+#### Find Shortest Path Between Topics
 
 ```http
-GET /api/v1/path/find?startTopicId=topic_001&endTopicId=topic_002
+GET /api/v1/topics/:startTopicId/path/:endTopicId
 Authorization: Bearer <jwt-token>
+```
+
+**Example:**
+```bash
+curl --request GET \
+  --url 'http://localhost:3000/api/v1/topics/5c35486e-6c1c-4d47-b507-c44e55867e04/path/a2879fd5-9c42-4d04-ba8d-0dd8283f9a8b' \
+  --header 'Authorization: Bearer <jwt-token>'
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Shortest path found successfully",
+  "data": {
+    "startTopicId": "5c35486e-6c1c-4d47-b507-c44e55867e04",
+    "endTopicId": "a2879fd5-9c42-4d04-ba8d-0dd8283f9a8b",
+    "path": [
+      {
+        "id": "5c35486e-6c1c-4d47-b507-c44e55867e04",
+        "name": "Machine Learning Basics",
+        "content": "Introduction to machine learning concepts and algorithms",
+        "version": 1
+      }
+    ],
+    "pathLength": 4,
+    "distance": 3,
+    "connected": true
+  }
+}
+```
+
+#### Check Topic Connections
+
+```http
+GET /api/v1/topics/:topicId/connections?targetId=topic_002
+Authorization: Bearer <jwt-token>
+```
+
+#### Find Nearby Topics
+
+```http
+GET /api/v1/topics/:topicId/nearby?distance=2
+Authorization: Bearer <jwt-token>
+```
+
+#### Validate Path Request (Admin/Editor only)
+
+```http
+POST /api/v1/path/validate
+Authorization: Bearer <jwt-token>
+```
+
+```json
+{
+  "startTopicId": "topic_001",
+  "endTopicId": "topic_002"
+}
+```
+
+#### Get Path Statistics (Admin only)
+
+```http
+GET /api/v1/path/stats
+Authorization: Bearer <admin-jwt-token>
+```
+
+#### Clear Path Cache (Admin only)
+
+```http
+POST /api/v1/path/clear-cache
+Authorization: Bearer <admin-jwt-token>
 ```
 
 ## Architecture

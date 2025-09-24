@@ -12,7 +12,6 @@ const readline = require('readline');
 
 const DATABASE_PATH = path.join(__dirname, '..', 'data', 'database.json');
 const ADMIN_USER_ID = 'user_001';
-const ADMIN_EMAIL = 'admin@example.com';
 
 function loadDatabase() {
   if (!fs.existsSync(DATABASE_PATH)) {
@@ -67,7 +66,7 @@ function promptPassword() {
   return new Promise((resolve) => {
     const rl = readline.createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
     });
 
     // Hide password input
@@ -104,11 +103,15 @@ async function setAdminPassword() {
 
   console.log(`👤 Found admin user: ${adminUser.name} (${adminUser.email})`);
 
-  if (adminUser.password) {
+  // Check for force flag
+  const forceUpdate =
+    process.argv.includes('--force') || process.argv.includes('-f');
+
+  if (adminUser.password && !forceUpdate) {
     console.log('⚠️  Admin user already has a password set.');
     const rl = readline.createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
     });
 
     const answer = await new Promise((resolve) => {
@@ -120,10 +123,17 @@ async function setAdminPassword() {
       console.log('✅ Password update cancelled');
       process.exit(0);
     }
+  } else if (adminUser.password && forceUpdate) {
+    console.log('🔄 Forcing password update...');
   }
 
   // Get password from command line argument or prompt
   let password = process.argv[2];
+
+  // Make sure password is not a flag
+  if (password && (password.startsWith('--') || password.startsWith('-'))) {
+    password = null;
+  }
 
   if (!password) {
     password = await promptPassword();
@@ -156,7 +166,6 @@ async function setAdminPassword() {
     console.log(`   Password: [HIDDEN]`);
     console.log(`   Role: ${adminUser.role}`);
     console.log('\n💡 You can now login using POST /api/v1/users/login');
-
   } catch (error) {
     console.error('❌ Failed to set admin password:', error.message);
     process.exit(1);
@@ -165,11 +174,21 @@ async function setAdminPassword() {
 
 function showUsage() {
   console.log('📖 Usage:');
-  console.log('   node scripts/set-admin-password.js [password]');
+  console.log('   node scripts/set-admin-password.js [password] [--force|-f]');
   console.log('');
   console.log('Examples:');
-  console.log('   node scripts/set-admin-password.js                    # Prompts for password');
-  console.log('   node scripts/set-admin-password.js MySecurePass123    # Sets password directly');
+  console.log(
+    '   node scripts/set-admin-password.js                    # Prompts for password'
+  );
+  console.log(
+    '   node scripts/set-admin-password.js MySecurePass123    # Sets password directly'
+  );
+  console.log(
+    '   node scripts/set-admin-password.js MyPass123 --force  # Force update without confirmation'
+  );
+  console.log('');
+  console.log('Options:');
+  console.log('   --force, -f    Force password update without confirmation');
   console.log('');
   console.log('Password requirements:');
   console.log('   • At least 8 characters long');
