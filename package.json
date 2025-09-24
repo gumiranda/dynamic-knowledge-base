@@ -19,7 +19,8 @@
     "db:seed": "node scripts/seed-database.js",
     "db:reset": "node scripts/reset-database.js",
     "db:backup": "node scripts/backup-database.js",
-    "db:validate": "node scripts/validate-database.js"
+    "db:validate": "node scripts/validate-database.js",
+    "db:set-admin-password": "node scripts/set-admin-password.js"
   },
   "keywords": [
     "knowledge-base",

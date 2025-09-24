@@ -53,11 +53,7 @@ export function createUserRoutes(): Router {
   // Routes
 
   // POST /users/login - Login with email and password (no auth required)
-  router.post(
-    '/login',
-    validateLogin,
-    userController.loginUser
-  );
+  router.post('/login', validateLogin, userController.loginUser);
 
   // POST /users/authenticate - Authenticate a user (legacy endpoint, no auth required)
   router.post(
@@ -85,6 +81,9 @@ export function createUserRoutes(): Router {
   // GET /users/me - Get current user information
   router.get('/me', AuthMiddleware.authenticate, userController.getCurrentUser);
 
+  // POST /users/register - Register a new user (no auth required)
+  router.post('/register', validateRegisterUser, userController.registerUser);
+
   // Apply authentication middleware to remaining routes
   router.use(AuthMiddleware.authenticate);
 
@@ -94,9 +93,6 @@ export function createUserRoutes(): Router {
     AuthMiddleware.requireRole(UserRole.ADMIN),
     userController.getUsers
   );
-
-  // POST /users - Register a new user
-  router.post('/', validateRegisterUser, userController.registerUser);
 
   // GET /users/:id - Get a specific user
   router.get('/:id', userController.getUser);

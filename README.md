@@ -52,7 +52,18 @@ A RESTful API for managing interconnected topics and resources with version cont
    npm run db:init
    ```
 
-5. **Start development server**
+5. **Set up admin user**
+
+   ```bash
+   npm run db:set-admin-password
+   ```
+   
+   This creates the default admin user:
+   - **Email**: `admin@example.com`
+   - **Role**: `Admin`
+   - **Password**: (you'll set this during the script)
+
+6. **Start development server**
    ```bash
    npm run dev
    ```
@@ -61,20 +72,21 @@ The API will be available at `http://localhost:3000`
 
 ### Available Scripts
 
-| Script                  | Description                              |
-| ----------------------- | ---------------------------------------- |
-| `npm run dev`           | Start development server with hot reload |
-| `npm run build`         | Build for production                     |
-| `npm start`             | Start production server                  |
-| `npm test`              | Run all tests                            |
-| `npm run test:watch`    | Run tests in watch mode                  |
-| `npm run test:coverage` | Run tests with coverage report           |
-| `npm run lint`          | Run ESLint                               |
-| `npm run lint:fix`      | Fix ESLint issues automatically          |
-| `npm run format`        | Format code with Prettier                |
-| `npm run db:init`       | Initialize database with sample data     |
-| `npm run db:seed`       | Seed database with test data             |
-| `npm run db:reset`      | Reset database to initial state          |
+| Script                       | Description                              |
+| ---------------------------- | ---------------------------------------- |
+| `npm run dev`                | Start development server with hot reload |
+| `npm run build`              | Build for production                     |
+| `npm start`                  | Start production server                  |
+| `npm test`                   | Run all tests                            |
+| `npm run test:watch`         | Run tests in watch mode                  |
+| `npm run test:coverage`      | Run tests with coverage report           |
+| `npm run lint`               | Run ESLint                               |
+| `npm run lint:fix`           | Fix ESLint issues automatically          |
+| `npm run format`             | Format code with Prettier                |
+| `npm run db:init`            | Initialize database with default admin   |
+| `npm run db:seed`            | Seed database with test data             |
+| `npm run db:reset`           | Reset database to initial state          |
+| `npm run db:set-admin-password` | Set password for default admin user     |
 
 ## API Documentation
 
@@ -92,7 +104,22 @@ GET /health
 
 ### Authentication
 
-#### Register User
+> **⚠️ Important**: After running `npm run db:init`, you must set up the admin password using `npm run db:set-admin-password` before you can create users with elevated roles.
+
+#### Admin Login (First Step)
+
+```http
+POST /api/v1/users/login
+```
+
+```json
+{
+  "email": "admin@example.com",
+  "password": "your-admin-password"
+}
+```
+
+#### Register User (Public Registration - Viewer Role Only)
 
 ```http
 POST /api/v1/users/register
@@ -102,6 +129,24 @@ POST /api/v1/users/register
 {
   "name": "John Doe",
   "email": "john@example.com",
+  "role": "Viewer",
+  "password": "securepassword123"
+}
+```
+
+> **Note**: Public registration automatically assigns `Viewer` role. Only authenticated admins can create `Editor` or `Admin` users.
+
+#### Register User with Elevated Role (Admin Only)
+
+```http
+POST /api/v1/users/register
+Authorization: Bearer <admin-jwt-token>
+```
+
+```json
+{
+  "name": "Jane Editor",
+  "email": "jane@example.com",
   "role": "Editor",
   "password": "securepassword123"
 }
@@ -336,12 +381,21 @@ npm run format           # Format code with Prettier
 ### Database Management
 
 ```bash
-npm run db:init          # Initialize database
-npm run db:seed          # Add sample data
-npm run db:reset         # Reset database
-npm run db:backup        # Create backup
-npm run db:validate      # Validate database integrity
+npm run db:init                 # Initialize database with default admin
+npm run db:set-admin-password   # Set password for admin@example.com
+npm run db:seed                 # Add sample data
+npm run db:reset                # Reset database
+npm run db:backup               # Create backup
+npm run db:validate             # Validate database integrity
 ```
+
+### Initial Setup Workflow
+
+1. **Initialize database**: `npm run db:init`
+2. **Set admin password**: `npm run db:set-admin-password`
+3. **Add sample data** (optional): `npm run db:seed`
+4. **Login as admin**: Use `admin@example.com` with your password
+5. **Create other users**: Use admin JWT to create Editor/Admin users
 
 ## Technologies Used
 

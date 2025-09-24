@@ -182,7 +182,7 @@ export class LoggingMiddleware {
       query: Object.keys(req.query).length > 0 ? req.query : undefined,
       body:
         req.method !== 'GET' && req.body
-          ? this.sanitizeBody(req.body)
+          ? LoggingMiddleware.sanitizeBody(req.body)
           : undefined,
     });
 

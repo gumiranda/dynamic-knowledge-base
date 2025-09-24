@@ -47,15 +47,20 @@ export class UserController {
         throw new ValidationError('Invalid user role');
       }
 
-      // Only admins can register users with admin or editor roles
-      if (
-        registerUserDto.role !== UserRole.VIEWER &&
-        (!registeredBy || !registeredBy.isAdmin())
+      // Handle role assignment based on registration context
+      if (!registeredBy) {
+        // Public registration - force VIEWER role
+        registerUserDto.role = UserRole.VIEWER;
+      } else if (
+        !registeredBy.isAdmin() &&
+        registerUserDto.role !== UserRole.VIEWER
       ) {
+        // Non-admin authenticated users can only create VIEWER accounts
         throw new UnauthorizedError(
           'Only administrators can register users with elevated roles'
         );
       }
+      // Admin users can create accounts with any role (no additional validation needed)
 
       // Register user through service
       const createdUser = await this.userService.registerUser(
