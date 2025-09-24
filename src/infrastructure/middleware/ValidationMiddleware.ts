@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from '../../application/errors/AppError';
+import { ClassValidationMiddleware } from './ClassValidationMiddleware';
 
 export interface ValidationRule {
   field: string;
@@ -14,6 +15,7 @@ export interface ValidationRule {
 
 export class ValidationMiddleware {
   /**
+   * @deprecated Use ClassValidationMiddleware.validateContentType instead
    * Validates Content-Type header for requests that require JSON
    */
   static validateContentType(
@@ -21,21 +23,7 @@ export class ValidationMiddleware {
     _res: Response,
     next: NextFunction
   ): void {
-    // Skip validation for GET requests and health check
-    if (req.method === 'GET' || req.path === '/health') {
-      return next();
-    }
-
-    // Validate Content-Type for POST/PUT/PATCH requests
-    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
-      const contentType = req.get('Content-Type');
-
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new ValidationError('Content-Type must be application/json');
-      }
-    }
-
-    next();
+    return ClassValidationMiddleware.validateContentType(req, _res, next);
   }
 
   /**
@@ -199,13 +187,11 @@ export class ValidationMiddleware {
   }
 
   /**
+   * @deprecated Use ClassValidationMiddleware.sanitizeInput instead
    * Sanitizes input data
    */
   static sanitizeInput(req: Request, _res: Response, next: NextFunction): void {
-    if (req.body && typeof req.body === 'object') {
-      req.body = this.sanitizeObject(req.body);
-    }
-    next();
+    return ClassValidationMiddleware.sanitizeInput(req, _res, next);
   }
 
   /**

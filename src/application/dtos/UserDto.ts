@@ -1,4 +1,14 @@
 import { UserRole } from '../../domain/enums/UserRole';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
 
 /**
  * Data Transfer Objects for User operations
@@ -7,18 +17,52 @@ import { UserRole } from '../../domain/enums/UserRole';
 /**
  * DTO for user registration
  */
-export interface RegisterUserDto {
+export class RegisterUserDto {
+  @IsNotEmpty({ message: 'Name is required' })
+  @IsString({ message: 'Name must be a string' })
+  @Length(2, 100, { message: 'Name must be between 2 and 100 characters' })
+  @Transform(({ value }) => value?.trim())
+  @Matches(/^[a-zA-Z\s\-'\.]+$/, {
+    message:
+      'Name can only contain letters, spaces, hyphens, apostrophes, and periods',
+  })
   name: string;
+
+  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Email must be a valid email address' })
+  @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
+
+  @IsNotEmpty({ message: 'Role is required' })
+  @IsEnum(UserRole, {
+    message: `Role must be one of: ${Object.values(UserRole).join(', ')}`,
+  })
   role: UserRole;
 }
 
 /**
  * DTO for updating user information
  */
-export interface UpdateUserDto {
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString({ message: 'Name must be a string' })
+  @Length(2, 100, { message: 'Name must be between 2 and 100 characters' })
+  @Transform(({ value }) => value?.trim())
+  @Matches(/^[a-zA-Z\s\-'\.]+$/, {
+    message:
+      'Name can only contain letters, spaces, hyphens, apostrophes, and periods',
+  })
   name?: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'Email must be a valid email address' })
+  @Transform(({ value }) => value?.toLowerCase().trim())
   email?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole, {
+    message: `Role must be one of: ${Object.values(UserRole).join(', ')}`,
+  })
   role?: UserRole;
 }
 
@@ -40,7 +84,10 @@ export interface UserResponseDto {
 /**
  * DTO for user authentication
  */
-export interface AuthenticateUserDto {
+export class AuthenticateUserDto {
+  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Email must be a valid email address' })
+  @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
   // In a real system, this would include password or other auth credentials
   // For this demo, we'll use email-based authentication
