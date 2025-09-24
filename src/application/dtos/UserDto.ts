@@ -88,16 +88,6 @@ export interface UserResponseDto {
 }
 
 /**
- * DTO for user authentication (legacy - for backward compatibility)
- */
-export class AuthenticateUserDto {
-  @IsNotEmpty({ message: 'Email is required' })
-  @IsEmail({}, { message: 'Email must be a valid email address' })
-  @Transform(({ value }) => value?.toLowerCase().trim())
-  email: string;
-}
-
-/**
  * DTO for user login with password
  */
 export class LoginUserDto {

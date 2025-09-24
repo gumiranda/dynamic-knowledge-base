@@ -249,18 +249,6 @@ Authorization: Bearer <admin-jwt-token>
 }
 ```
 
-#### Authenticate User (Legacy)
-
-```http
-POST /api/v1/users/authenticate
-```
-
-```json
-{
-  "email": "user@example.com"
-}
-```
-
 #### Validate User Permissions
 
 ```http

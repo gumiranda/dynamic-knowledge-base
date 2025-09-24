@@ -6,7 +6,6 @@ import { UserRole } from '../../../domain/enums/UserRole';
 import {
   RegisterUserDto,
   UpdateUserDto,
-  AuthenticateUserDto,
 } from '../../../application/dtos/UserDto';
 
 // Mock the UserService
@@ -141,91 +140,6 @@ describe('UserController', () => {
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Only administrators can register users with elevated roles',
-        })
-      );
-    });
-  });
-
-  describe('authenticateUser', () => {
-    it('should authenticate a user successfully', async () => {
-      // Arrange
-      const authenticateUserDto: AuthenticateUserDto = {
-        email: 'test@example.com',
-      };
-
-      const mockAuthenticatedUser = {
-        id: 'user1',
-        name: 'Test User',
-        email: 'test@example.com',
-        role: UserRole.VIEWER,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isAdmin: false,
-        canEdit: false,
-        isViewerOnly: true,
-      };
-
-      mockRequest.body = authenticateUserDto;
-      mockUserService.authenticateUser.mockResolvedValue(
-        mockAuthenticatedUser as any
-      );
-
-      // Act
-      await userController.authenticateUser(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext
-      );
-
-      // Assert
-      expect(mockUserService.authenticateUser).toHaveBeenCalledWith(
-        authenticateUserDto
-      );
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        status: 'success',
-        message: 'User authenticated successfully',
-        data: {
-          user: mockAuthenticatedUser,
-        },
-      });
-    });
-
-    it('should handle user not found', async () => {
-      // Arrange
-      mockRequest.body = { email: 'nonexistent@example.com' };
-      mockUserService.authenticateUser.mockResolvedValue(null);
-
-      // Act
-      await userController.authenticateUser(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext
-      );
-
-      // Assert
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'User not found',
-        })
-      );
-    });
-
-    it('should handle missing email', async () => {
-      // Arrange
-      mockRequest.body = {};
-
-      // Act
-      await userController.authenticateUser(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext
-      );
-
-      // Assert
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Email is required for authentication',
         })
       );
     });

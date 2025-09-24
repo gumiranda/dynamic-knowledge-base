@@ -6,7 +6,6 @@ import {
   RegisterUserDto,
   UpdateUserDto,
   UserResponseDto,
-  AuthenticateUserDto,
   LoginUserDto,
   LoginResponseDto,
   UserSearchDto,
@@ -89,33 +88,6 @@ export class UserService {
   }
 
   /**
-   * Authenticates a user by email
-   * @param authData The authentication data
-   * @returns Promise resolving to the authenticated user or null if not found
-   */
-  async authenticateUser(
-    authData: AuthenticateUserDto
-  ): Promise<UserResponseDto | null> {
-    // Validate input
-    if (!authData.email || typeof authData.email !== 'string') {
-      throw new ValidationError('Email is required for authentication');
-    }
-
-    const email = authData.email.toLowerCase().trim();
-    if (email.length === 0) {
-      throw new ValidationError('Email cannot be empty');
-    }
-
-    // Find user by email
-    const user = await this.userRepository.findByEmail(email);
-    if (!user) {
-      return null;
-    }
-
-    return this.mapToResponseDto(user);
-  }
-
-  /**
    * Logs in a user with email and password, returning JWT tokens
    * @param loginData The login credentials
    * @returns Promise resolving to login response with JWT tokens
@@ -141,7 +113,9 @@ export class UserService {
 
     // Verify password
     if (!user.hasPassword()) {
-      throw new UnauthorizedError('User has no password set. Please use alternative authentication method.');
+      throw new UnauthorizedError(
+        'User has no password set. Please use alternative authentication method.'
+      );
     }
 
     const isValidPassword = await user.verifyPassword(password);

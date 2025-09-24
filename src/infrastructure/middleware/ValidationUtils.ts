@@ -2,11 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ClassConstructor } from 'class-transformer';
 import { ClassValidationMiddleware } from './ClassValidationMiddleware';
 import { ValidationMiddleware } from './ValidationMiddleware';
-import {
-  RegisterUserDto,
-  UpdateUserDto,
-  AuthenticateUserDto,
-} from '../../application/dtos/UserDto';
+import { RegisterUserDto, UpdateUserDto } from '../../application/dtos/UserDto';
 import {
   CreateTopicDto,
   UpdateTopicDto,
@@ -38,8 +34,6 @@ export class ValidationUtils {
     ClassValidationMiddleware.validateBody(RegisterUserDto);
   static readonly validateUpdateUser =
     ClassValidationMiddleware.validateBody(UpdateUserDto);
-  static readonly validateAuthenticateUser =
-    ClassValidationMiddleware.validateBody(AuthenticateUserDto);
 
   // Topic validation middleware
   static readonly validateCreateTopic =

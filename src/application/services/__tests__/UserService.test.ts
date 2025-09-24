@@ -10,7 +10,6 @@ import {
 import {
   RegisterUserDto,
   UpdateUserDto,
-  AuthenticateUserDto,
   AssignRoleDto,
 } from '../../dtos/UserDto';
 
@@ -121,42 +120,6 @@ describe('UserService', () => {
     });
   });
 
-  describe('authenticateUser', () => {
-    const authData: AuthenticateUserDto = {
-      email: 'editor@test.com',
-    };
-
-    it('should authenticate user successfully', async () => {
-      // Arrange
-      mockUserRepository.findByEmail.mockResolvedValue(editorUser);
-
-      // Act
-      const result = await userService.authenticateUser(authData);
-
-      // Assert
-      expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(
-        authData.email
-      );
-      expect(result).toEqual(
-        expect.objectContaining({
-          email: editorUser.email,
-          role: editorUser.role,
-        })
-      );
-    });
-
-    it('should return null for non-existent user', async () => {
-      // Arrange
-      mockUserRepository.findByEmail.mockResolvedValue(null);
-
-      // Act
-      const result = await userService.authenticateUser(authData);
-
-      // Assert
-      expect(result).toBeNull();
-    });
-  });
-
   describe('updateUser', () => {
     const validUpdateDto: UpdateUserDto = {
       name: 'Updated Name',
@@ -186,7 +149,7 @@ describe('UserService', () => {
         expect.objectContaining({
           name: validUpdateDto.name,
           email: validUpdateDto.email,
-          role: editorUser.role
+          role: editorUser.role,
         })
       );
       expect(result.name).toBe(validUpdateDto.name);
@@ -304,7 +267,7 @@ describe('UserService', () => {
         newRole: UserRole.ADMIN,
         assignedBy: adminUser.id,
       };
-      
+
       // Act & Assert
       await expect(
         userService.assignRole(validAssignmentDto, editorUser)

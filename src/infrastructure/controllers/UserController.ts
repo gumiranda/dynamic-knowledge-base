@@ -5,7 +5,6 @@ import { UserRole } from '../../domain/enums/UserRole';
 import {
   RegisterUserDto,
   UpdateUserDto,
-  AuthenticateUserDto,
   LoginUserDto,
   AssignRoleDto,
 } from '../../application/dtos/UserDto';
@@ -73,44 +72,6 @@ export class UserController {
         message: 'User registered successfully',
         data: {
           user: createdUser,
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * POST /users/authenticate - Authenticate a user
-   */
-  public authenticateUser = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      // Validate request body
-      const authenticateUserDto: AuthenticateUserDto = {
-        email: req.body.email,
-      };
-
-      if (!authenticateUserDto.email) {
-        throw new ValidationError('Email is required for authentication');
-      }
-
-      // Authenticate user through service
-      const authenticatedUser =
-        await this.userService.authenticateUser(authenticateUserDto);
-
-      if (!authenticatedUser) {
-        throw new NotFoundError('User not found');
-      }
-
-      res.status(200).json({
-        status: 'success',
-        message: 'User authenticated successfully',
-        data: {
-          user: authenticatedUser,
         },
       });
     } catch (error) {

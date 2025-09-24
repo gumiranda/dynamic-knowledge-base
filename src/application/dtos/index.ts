@@ -2,7 +2,6 @@
 export {
   RegisterUserDto,
   UpdateUserDto,
-  AuthenticateUserDto,
   UserResponseDto,
   UserSearchDto,
   AssignRoleDto,

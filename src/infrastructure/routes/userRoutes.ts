@@ -29,11 +29,6 @@ export function createUserRoutes(): Router {
     'role',
   ]);
 
-  // Validation middleware for authentication
-  const validateAuthentication = ValidationMiddleware.validateRequiredFields([
-    'email',
-  ]);
-
   // Validation middleware for login
   const validateLogin = ValidationMiddleware.validateRequiredFields([
     'email',
@@ -54,13 +49,6 @@ export function createUserRoutes(): Router {
 
   // POST /users/login - Login with email and password (no auth required)
   router.post('/login', validateLogin, userController.loginUser);
-
-  // POST /users/authenticate - Authenticate a user (legacy endpoint, no auth required)
-  router.post(
-    '/authenticate',
-    validateAuthentication,
-    userController.authenticateUser
-  );
 
   // POST /users/validate-permissions - Validate user permissions
   router.post(
